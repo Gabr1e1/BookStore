@@ -19,7 +19,7 @@ private:
 	bool deleted;
 
 public:
-	User(int _level, const std::string &_id, 
+	User(int _level, const std::string &_id,
 		const std::string &_name, const std::string &_password);
 
 public:

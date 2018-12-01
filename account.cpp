@@ -1,7 +1,7 @@
 #include "account.h"
 
-User::User(const int _level, const std::string &_id, 
-	const std::string &_name, const std::string &_password) : 
+User::User(const int _level, const std::string &_id,
+	const std::string &_name, const std::string &_password) :
 	level(_level), userId(_id), name(_name), password(_password), deleted(false)
 {
 	/* Empty */
@@ -22,7 +22,7 @@ std::string User::printToString()
 
 AccountSystem::AccountSystem(const std::string &file) : curLevel(0), size(0)
 {
-	dataIO.open(file, std::ios::out|std::ios::app);
+	dataIO.open(file, std::ios::out | std::ios::app);
 	User root(7, "root", "root", "sjtu");
 	printToBack(root.printToString());
 }
