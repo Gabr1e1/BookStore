@@ -1,13 +1,5 @@
 #include "database.h"
 
-int stringToInteger(const std::string &str)
-{
-	std::istringstream stream(str);
-	int value;
-	stream >> value;
-	return value;
-}
-
 DataType::DataType(std::string str)
 {
 	ISBN = str.substr(0, ISBNLen);
@@ -33,8 +25,8 @@ std::string DataType::printToString()
 	sprintf(s + ISBNLen, "%-40s", name);
 	sprintf(s + ISBNLen + StringLen, "%-40s", author);
 	sprintf(s + ISBNLen + 2 * StringLen, "%-40s", keyword);
-	sprintf(s + ISBNLen + 3 * StringLen, "%-5d", price);
-	sprintf(s + ISBNLen + 3 * StringLen + NumLen, "%-5d", quantity);
+	sprintf(s + ISBNLen + 3 * StringLen, "%-9d", price);
+	sprintf(s + ISBNLen + 3 * StringLen + NumLen, "%-9d", quantity);
 	std::string ret = s + (char)(deleted + '0');
 	return ret;
 }
@@ -52,7 +44,7 @@ Database::~Database()
 }
 
 std::string Database::readBlock(int address, int len)
-{
+{ 
 	char *t = new char[len];
 	dataIO.seekg(address);
 	dataIO.read(t, len);
@@ -86,18 +78,19 @@ bool Database::inCurBlock(std::string &key, int curSize)
 	return (key >= strBegin) && (key <= strEnd);
 }
 
-DataType Database::readInsideBlock(std::string &key, int address, int size)
+std::vector<DataType> Database::readInsideBlock(std::string key, int address, int size,std::string uniqueKey)
 {
+	std::vector<DataType> ret;
 	for (int i = 1; i <= size; i++)
 	{
 		std::string cur = readBlock(address, readLen);
-		if (cur == key) return readWholeBlock(address);
+		if (cur == key && (cur.substr(0, StringLen) == uniqueKey || uniqueKey == "")) ret.push_back(DataType(readWholeBlock(address)));
 		address += DataTypeLen;
 	}
-	return DataType();
+	return ret;
 }
 
-DataType Database::read(std::string &key)
+DataType Database::read(std::string key, std::string uniqueKey)
 {
 	int curAddress = startAddress;
 	while (true)
@@ -106,7 +99,12 @@ DataType Database::read(std::string &key)
 		int curSize;
 		dataIO.read(reinterpret_cast<char*>(&curSize), sizeof(curSize));
 
-		if (inCurBlock(key, curSize)) return readInsideBlock(key, dataIO.tellg(), curSize);
+		if (inCurBlock(key, curSize))
+		{
+			std::vector<DataType> r = readInsideBlock(key, dataIO.tellg(), curSize, uniqueKey);
+			if (r.size() == 0) return DataType();
+			else return r[0];
+		}
 		else
 		{
 			curAddress += BlockLen - sizeof(int);
@@ -118,6 +116,32 @@ DataType Database::read(std::string &key)
 		}
 	}
 	return DataType();
+}
+
+std::vector<DataType> Database::readAll(std::string key)
+{
+	int curAddress = startAddress;
+	while (true)
+	{
+		dataIO.seekg(curAddress);
+		int curSize;
+		dataIO.read(reinterpret_cast<char*>(&curSize), sizeof(curSize));
+
+		if (inCurBlock(key, curSize))
+		{
+			return readInsideBlock(key, dataIO.tellg(), curSize);
+		}
+		else
+		{
+			curAddress += BlockLen - sizeof(int);
+			dataIO.seekg(curAddress);
+			int next;
+			dataIO.read(reinterpret_cast<char*>(&next), sizeof(next));
+			if (next == -1) break;
+			curAddress = next;
+		}
+	}
+	return {};
 }
 
 int Database::createNewBlock(int size, int next)
@@ -159,14 +183,15 @@ void Database::cleanup()
 	//TODO: Write cleanup()
 }
 
-void Database::writeInsideBlock(std::string &key, int address, int size, std::string value)
+void Database::writeInsideBlock(std::string &key, int address, int size, 
+	std::string uniqueKey, std::string value)
 {
 	int pre = 0;
 	int start = address;
 	for (int i = 1; i <= size; i++)
 	{
 		std::string cur = readBlock(address, readLen);
-		if (cur == key)
+		if (cur == key && cur.substr(0,StringLen) == uniqueKey)
 		{
 			char *t = new char[DataTypeLen];
 			for (int i = 0; i < DataTypeLen; i++) t[i] = cur[i];
@@ -189,7 +214,7 @@ void Database::writeInsideBlock(std::string &key, int address, int size, std::st
 	}
 }
 
-void Database::write(std::string key, DataType &data)
+void Database::write(std::string key, DataType &data, std::string uniqueKey)
 {
 	int curAddress = startAddress;
 	while (true)
@@ -198,7 +223,7 @@ void Database::write(std::string key, DataType &data)
 		int curSize;
 		dataIO.read(reinterpret_cast<char*>(&curSize), sizeof(curSize));
 
-		if (inCurBlock(key, curSize)) writeInsideBlock(key, dataIO.tellg(), curSize, data.printToString());
+		if (inCurBlock(key, curSize)) writeInsideBlock(key, dataIO.tellg(), curSize, uniqueKey, data.printToString());
 		else
 		{
 			curAddress += BlockLen - sizeof(int);
@@ -217,9 +242,9 @@ void Database::write(std::string key, DataType &data)
 	writeWholeBlock(t + sizeof(int), data.printToString());
 }
 
-void Database::erase(std::string key)
+void Database::erase(std::string key, std::string uniqueKey)
 {
-	auto data = read(key);
+	auto data = read(key,uniqueKey);
 	data.deleted = true;
-	write(key, data);
+	write(key, data,uniqueKey);
 }
