@@ -8,6 +8,13 @@ int stringToInteger(const std::string &str)
 	return value;
 }
 
+double stringToDouble(const std::string &str)
+{
+	std::istringstream stream(str);
+	double value;
+	stream >> value;
+	return value;
+}
 
 dataSystem::dataSystem(const std::string &file)
 {

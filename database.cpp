@@ -2,17 +2,18 @@
 
 DataType::DataType(std::string str)
 {
+	char *t = (char*)str.c_str();
 	ISBN = str.substr(0, ISBNLen);
 	name = str.substr(ISBNLen, StringLen);
 	author = str.substr(ISBNLen + StringLen, StringLen);
 	keyword = str.substr(ISBNLen + StringLen * 2, StringLen);
-	price = stringToInteger(str.substr(ISBNLen + StringLen * 3, NumLen));
-	quantity = stringToInteger(str.substr(ISBNLen + StringLen * 3 + NumLen, NumLen));
+	price = *(reinterpret_cast<double*>(t + ISBNLen + 3 * StringLen));
+	quantity = *(reinterpret_cast<int*>(t + ISBNLen + 3 * StringLen + sizeof(price)));
 	deleted = str[str.length() - 1] - '0';
 }
 
 DataType::DataType(std::string _ISBN, std::string _name, std::string _author,
-	std::string _keyword, int _price, int _quantity)
+	std::string _keyword, double _price, int _quantity)
 	: ISBN(_ISBN), name(_name), author(_author), keyword(_keyword), price(_price), quantity(_quantity)
 {
 	/* Empty */
@@ -20,14 +21,17 @@ DataType::DataType(std::string _ISBN, std::string _name, std::string _author,
 
 std::string DataType::printToString()
 {
-	char s[ISBNLen + StringLen * 2 + NumLen * 2];
+	char s[ISBNLen + StringLen * 3];
 	sprintf(s, "%-20s", ISBN);
 	sprintf(s + ISBNLen, "%-40s", name);
 	sprintf(s + ISBNLen + StringLen, "%-40s", author);
 	sprintf(s + ISBNLen + 2 * StringLen, "%-40s", keyword);
-	sprintf(s + ISBNLen + 3 * StringLen, "%-9d", price);
-	sprintf(s + ISBNLen + 3 * StringLen + NumLen, "%-9d", quantity);
-	std::string ret = s + (char)(deleted + '0');
+	std::string ret = s;
+	for (size_t i = 0; i < sizeof(quantity); i++)
+		ret += *(reinterpret_cast<char*>(&quantity) + i);
+	for (size_t i = 0; i < sizeof(price); i++)
+		ret += *(reinterpret_cast<char*>(&price) + i);
+	ret += (char)(deleted + '0');
 	return ret;
 }
 

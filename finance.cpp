@@ -1,24 +1,25 @@
 #include "finance.h"
 
-FinancialEvent::FinancialEvent(int q, int p, bool r) : quantity(q), price(p), isRevenue(r)
+FinancialEvent::FinancialEvent(int q, double p, bool r) : quantity(q), price(p), isRevenue(r)
 {
 	/* Empty */
 }
 
 FinancialEvent::FinancialEvent(const std::string &str)
 {
-	quantity = stringToInteger(str.substr(0, NumLen));
-	price = stringToInteger(str.substr(NumLen, NumLen));
+	char *t = (char*)str.c_str();
+	quantity = *(reinterpret_cast<int*>(t));
+	price = *(reinterpret_cast<double*>(t + sizeof(int)));
 	isRevenue = (bool)(str[str.length() - 1] - '0');
 }
 
 std::string FinancialEvent::printToString()
 {
-	char *t = new char[FinancialEventLen];
-	sprintf(t, "%-9d", quantity);
-	sprintf(t + NumLen, "%-9d", price);
-	std::string ret = t + (char)(isRevenue + '0');
-	delete[] t;
+	std::string ret = "";
+	for (size_t i = 0; i < sizeof(quantity); i++)
+		ret += *(reinterpret_cast<char*>(&quantity) + i);
+	for (size_t i = 0; i < sizeof(price); i++)
+		ret += *(reinterpret_cast<char*>(&price) + i);
 	return ret;
 }
 
@@ -39,7 +40,7 @@ FinanceSystem::~FinanceSystem()
 	dataIO.write(reinterpret_cast<char*>(&size), sizeof(size));
 }
 
-void FinanceSystem::addEvent(int quantity, int price, bool isRevenue)
+void FinanceSystem::addEvent(int quantity, double price, bool isRevenue)
 {
 	printToBack(FinancialEvent(quantity, price, isRevenue).printToString());
 	size++;

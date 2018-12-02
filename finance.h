@@ -13,12 +13,11 @@ class FinancialEvent
 {
 public:
 	int quantity;
-	int price; //total price
-	//both aligned to 9 characters 
+	double price; //total price
 	bool isRevenue;
 
 public:
-	FinancialEvent(int q, int p, bool r);
+	FinancialEvent(int q, double p, bool r);
 	FinancialEvent(const std::string &str);
 
 public:
@@ -36,7 +35,7 @@ public:
 	~FinanceSystem();
 
 public:
-	void addEvent(int quantity, int price, bool isRevenue);
+	void addEvent(int quantity, double price, bool isRevenue);
 	void addEvent(FinancialEvent &event);
 	void printEvent(int time);
 	void printTotal();

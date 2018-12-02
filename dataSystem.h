@@ -8,6 +8,7 @@
 #include <sstream>
 
 int stringToInteger(const std::string &str);
+double stringToDouble(const std::string &str);
 
 class dataSystem
 {

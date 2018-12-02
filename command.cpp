@@ -123,7 +123,7 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 	{
 		if (curSelected.size() != 1) throw("Invalid");
 		DataType t = curSelected[0];
-		Finance->
+		Finance->addEvent(stringToInteger(token[1]), stringToDouble(token[2]), false);
 	}
 	else if (cmd == "show" && token[1] != "finance")
 	{
@@ -150,12 +150,13 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 	else if (cmd == "show" && token[1] == "finance")
 	{
 		if (token.size() == 1) Finance->printTotal();
-		else Finance->printEvent(stringToInteger(token[2]));
+		else Finance->printEvent(stringToInteger(token[1]));
 	}
 	else if (cmd == "BUY")
 	{
 		auto t = ISBNDatabase->read(token[1], token[1]);
-		t.quantity += stringToInteger
+		int quantity = stringToInteger(token[2]);
+		Finance->addEvent(t.price * quantity, quantity, true);
 	}
 	else throw("Invalid");
 

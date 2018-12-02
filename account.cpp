@@ -14,8 +14,7 @@ std::string User::printToString()
 	sprintf(t + NumLen, "%-30s", userId);
 	sprintf(t + NumLen + StringLen, "%-30s", name);
 	sprintf(t + NumLen + 2 * StringLen, "%-30s", password);
-	sprintf(t + NumLen + 3 * StringLen, "%-1d", deleted);
-	std::string ret = t;
+	std::string ret = t + (char)(deleted + '0');
 	delete[] t;
 	return ret;
 }

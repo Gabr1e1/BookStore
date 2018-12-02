@@ -11,8 +11,7 @@
 
 static const int ISBNLen = 20;
 static const int StringLen = 40;
-static const int NumLen = 9; //can possibily cause error
-static const int DataTypeLen = ISBNLen + StringLen * 3 + NumLen * 2 + 1;
+static const int DataTypeLen = ISBNLen + StringLen * 3 + sizeof(int) + sizeof(double) + 1;
 
 static const int BlockSize = 100;
 static const int BlockLen = sizeof(int) * 2 + BlockSize * DataTypeLen;
@@ -23,8 +22,9 @@ class DataType
 public:
 	std::string ISBN; //aligned to 20 characters
 	std::string name, author, keyword; //aligned to 40 characters(20 chinese characters)
-	int price, quantity; //aligned to 5 characters
-	//price : total price
+	double price; //current price
+	int quantity;
+
 public:
 	bool deleted = false;
 
@@ -32,7 +32,7 @@ public:
 	DataType() = default;
 	DataType(std::string str);
 	DataType(std::string _ISBN, std::string _name, std::string _author,
-		std::string _keyword, int _price, int _quantity);
+		std::string _keyword, double _price, int _quantity);
 
 public:
 	std::string printToString();
