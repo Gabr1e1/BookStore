@@ -32,47 +32,65 @@ std::vector<std::string> CommandSystem::parse(std::string str)
 	return ret;
 }
 
-void CommandSystem::modify(DataType &data)
+void CommandSystem::modify(DataType data)
 {
-	ISBNDatabase->write(data.ISBN, data);
-	nameDatabase->write(data.name, data);
-	authorDatabase->write(data.author, data);
-	while (data.keyword.find("|") != std::string::npos)
+	ISBNDatabase->write(data.ISBN, data, data.ISBN);
+	nameDatabase->write(data.name, data, data.ISBN);
+	authorDatabase->write(data.author, data, data.ISBN);
+	std::string keyword = data.keyword;
+	while (keyword.find("|") != std::string::npos)
 	{
-
+		data.keyword = keyword.substr(0, keyword.find("|") - 1);
+		keywordDatabase->write(data.keyword, data, data.ISBN);
 	}
 }
 
-ResultType CommandSystem::runCommand(const std::string &str)
+void CommandSystem::printSelected()
 {
-	auto token = parse(str);
+	for (auto u : curSelected)
+	{
+		double p = (double)u.price / u.quantity;
+		std::cout.setf(std::ios::fixed);
+		std::cout << u.ISBN << "\t" << u.name << "\t" << u.author << "\t" << u.keyword << "\t";
+		std::cout << std::setprecision(2) << p << "\t" << u.quantity << "±¾" << "\n";
+	}
+}
 
-	if (token[0] == "exit") return Exit;
-	if (token[0] == "load") return runLoadCommand(token[1]);
+ResultType CommandSystem::userCommand(std::vector<std::string> token)
+{
+	std::string cmd = token[0];
 
-	if (token[0] == "su") Account->login(token[1], token[2]);
-	else if (token[0] == "logout") Account->logout();
-	else if (token[0] == "useradd")
+	if (cmd == "su") Account->login(token[1], token[2]);
+	else if (cmd == "logout") Account->logout();
+	else if (cmd == "useradd")
 	{
 		Account->add(token[3][0] - '0', token[1], token[2], token[4]);
 	}
-	else if (token[0] == "register")
+	else if (cmd == "register")
 	{
 		Account->add(1, token[1], token[2], token[3]);
 	}
-	else if (token[0] == "delete") Account->erase(token[1]);
-	else if (token[0] == "passwd")
+	else if (cmd == "delete") Account->erase(token[1]);
+	else if (cmd == "passwd")
 	{
 		if (token.size() == 3) Account->changePassword(token[1], token[2]);
 		else Account->changePassword(token[1], token[3], token[2]);
 	}
+	return Executed;
+}
 
-	if (token[0] == "select")
+//Todo: negative number
+
+ResultType CommandSystem::dataCommand(std::vector<std::string> token)
+{
+	std::string cmd = token[0];
+
+	if (cmd == "select")
 	{
 		curSelected.clear();
 		curSelected.push_back(ISBNDatabase->read(token[1]));
 	}
-	else if (token[0] == "modify")
+	else if (cmd == "modify")
 	{
 		if (curSelected.size() != 1) throw("Invalid");
 		DataType t = curSelected[0];
@@ -101,11 +119,64 @@ ResultType CommandSystem::runCommand(const std::string &str)
 		}
 		modify(t);
 	}
-	else if (true)
+	else if (cmd == "import")
 	{
-
+		if (curSelected.size() != 1) throw("Invalid");
+		DataType t = curSelected[0];
+		Finance->
 	}
+	else if (cmd == "show" && token[1] != "finance")
+	{
+		if (token.size() != 2) throw("Invalid");
+		curSelected.clear();
+		if (token[1].substr(0, 5) == "-ISBN")
+		{
+			curSelected = ISBNDatabase->readAll(token[1].substr(6, token[1].length() - 6));
+		}
+		else if (token[1].substr(0, 5) == "-name")
+		{
+			curSelected = nameDatabase->readAll(token[1].substr(7, token[1].length() - 2 - 7 + 1));
+		}
+		else if (token[1].substr(0, 7) == "-author")
+		{
+			curSelected = authorDatabase->readAll(token[1].substr(9, token[1].length() - 2 - 9 + 1));
+		}
+		else if (token[1].substr(0, 8) == "-keyword")
+		{
+			curSelected = keywordDatabase->readAll(token[1].substr(10, token[1].length() - 2 - 10 + 1));
+		}
+		printSelected();
+	}
+	else if (cmd == "show" && token[1] == "finance")
+	{
+		if (token.size() == 1) Finance->printTotal();
+		else Finance->printEvent(stringToInteger(token[2]));
+	}
+	else if (cmd == "BUY")
+	{
+		auto t = ISBNDatabase->read(token[1], token[1]);
+		t.quantity += stringToInteger
+	}
+	else throw("Invalid");
+
 	return Executed;
+}
+
+ResultType CommandSystem::runCommand(const std::string &str)
+{
+	auto token = parse(str);
+	std::string cmd = cmd;
+
+	if (cmd == "exit") return Exit;
+	if (cmd == "load") return runLoadCommand(token[1]);
+
+	if (cmd == "su" || cmd == "logout" || cmd == "useradd" || cmd == "register" || cmd == "delete" || cmd == "passwd")
+		return userCommand(token);
+
+	if (cmd == "select" || cmd == "modify" || cmd == "import" || cmd == "show" || cmd == "buy")
+		return dataCommand(token);
+
+	throw("Invalid");
 }
 
 ResultType CommandSystem::runLoadCommand(const std::string &file)

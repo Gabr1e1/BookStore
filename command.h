@@ -1,12 +1,16 @@
 #ifndef Command_H
 #define Command_H
 
+#include "dataSystem.h"
+#include "account.h"
+#include "database.h"
+#include "finance.h"
+
 #include <iostream>
 #include <string>
 #include <vector>
 #include <fstream>
-#include "account.h"
-#include "database.h"
+#include <iomanip>
 
 enum ResultType { Executed, Exit };
 
@@ -18,6 +22,7 @@ private:
 
 private:
 	AccountSystem *Account;
+	FinanceSystem *Finance;
 	Database *ISBNDatabase;
 	Database *nameDatabase;
 	Database *authorDatabase;
@@ -29,7 +34,12 @@ public:
 
 private:
 	std::vector<std::string> parse(std::string str);
-	void modify(DataType &data);
+	void modify(DataType data);
+
+private:
+	ResultType userCommand(std::vector<std::string> token);
+	ResultType dataCommand(std::vector<std::string> token);
+	void printSelected();
 
 public:
 	ResultType runCommand(const std::string &str);
