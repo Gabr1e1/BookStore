@@ -1,6 +1,8 @@
 #ifndef Account_H
 #define Account_H
 
+#include "dataSystem.h"
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -26,22 +28,15 @@ public:
 	std::string printToString();
 };
 
-class AccountSystem
+class AccountSystem : public dataSystem
 {
 private:
-	std::fstream dataIO;
 	int curLevel;
 	std::string curUserId;
-	int size;
 
 public:
 	AccountSystem(const std::string &file);
 	~AccountSystem();
-
-private:
-	void printToBack(const std::string &str);
-	std::string read(int address, int len);
-	void write(int address, const std::string &str);
 
 private:
 	int readLevel(int address);

@@ -20,39 +20,20 @@ std::string User::printToString()
 	return ret;
 }
 
-AccountSystem::AccountSystem(const std::string &file) : curLevel(0), size(0)
+AccountSystem::AccountSystem(const std::string &file) : dataSystem(file), curLevel(0)
 {
 	dataIO.open(file, std::ios::out | std::ios::app);
-	User root(7, "root", "root", "sjtu");
-	printToBack(root.printToString());
+	if (size == 0)
+	{
+		User root(7, "root", "root", "sjtu");
+		printToBack(root.printToString());
+	}
 }
 
 AccountSystem::~AccountSystem()
 {
-	dataIO.close();
-}
-
-void AccountSystem::printToBack(const std::string &str)
-{
-	auto *t = str.c_str();
-	dataIO.write(t, str.length());
-	delete[] t;
-}
-
-std::string AccountSystem::read(int address, int len)
-{
-	char *t = new char[len];
-	dataIO.seekg(address);
-	dataIO.write(t, len);
-	std::string ret = t;
-	delete[] t;
-	return ret;
-}
-
-void AccountSystem::write(int address, const std::string &str)
-{
-	dataIO.seekg(address);
-	dataIO << str;
+	dataIO.seekg(std::ios::beg);
+	dataIO.write(reinterpret_cast<char*>(&size), sizeof(size));
 }
 
 std::string AccountSystem::readUserId(int address)
@@ -83,8 +64,7 @@ void AccountSystem::add(int level, const std::string &userId,
 void AccountSystem::erase(const std::string &userId)
 {
 	if (!(curLevel >= 7)) throw("Invalid");
-	int curAddress = 0;
-	dataIO.seekg(curAddress);
+	int curAddress = sizeof(int);
 	for (int i = 1; i <= size; i++)
 	{
 		std::string curUserId = readUserId(curAddress);
