@@ -1,18 +1,21 @@
 #ifndef Account_H
 #define Account_H
 
-#include "dataSystem.h"
-
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <sstream>
+#include <iomanip>
 
-static const int NumLen = 1;
-static const int StringLen = 30;
-static const int UserLen = NumLen * 2 + 3 * StringLen;
+#include "dataSystem.h"
 
 class User
 {
+public:
+	static const int NumLen = 1;
+	static const int StringLen = 30;
+	static const int UserLen = NumLen * 2 + 3 * StringLen;
+
 private:
 	int level;
 	std::string userId; //aligned to 30

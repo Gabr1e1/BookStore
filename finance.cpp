@@ -48,25 +48,26 @@ void FinanceSystem::addEvent(int quantity, double price, bool isRevenue)
 
 void FinanceSystem::addEvent(FinancialEvent &event)
 {
-	printToBack(event.printToString);
+	printToBack(event.printToString());
 	size++;
 }
 
 void FinanceSystem::printEvent(int time)
 {
-	int curAddress = sizeof(int) + (size - time) * FinancialEventLen;
-	for (int i = size - time + 1; i <= size; i++, curAddress += FinancialEventLen)
+	int curAddress = sizeof(int) + (size - time) * FinancialEvent::FinancialEventLen;
+	for (int i = size - time + 1; i <= size; i++, curAddress += FinancialEvent::FinancialEventLen)
 	{
-		FinancialEvent(read(curAddress, FinancialEventLen)).print();
+		FinancialEvent(read(curAddress, FinancialEvent::FinancialEventLen)).print();
 	}
 }
 
 void FinanceSystem::printTotal()
 {
-	int quantity = 0, price = 0;
-	for (int i = 1, curAddress = sizeof(int); i <= size; i++, curAddress += FinancialEventLen)
+	int quantity = 0;
+	double price = 0;
+	for (int i = 1, curAddress = sizeof(int); i <= size; i++, curAddress += FinancialEvent::FinancialEventLen)
 	{
-		FinancialEvent t = FinancialEvent(read(curAddress, FinancialEventLen));
+		FinancialEvent t = FinancialEvent(read(curAddress, FinancialEvent::FinancialEventLen));
 		price += t.price;
 		quantity += t.quantity;
 	}

@@ -27,6 +27,12 @@
     <ClInclude Include="command.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="finance.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dataSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -42,6 +48,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="command.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="finance.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dataSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -4,13 +4,15 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include "dataSystem.h"
 
-static const int NumLen = 9;
-static const int FinancialEventLen = NumLen * 2 + 1;
+#include "dataSystem.h"
 
 class FinancialEvent
 {
+public:
+	static const int NumLen = 9;
+	static const int FinancialEventLen = NumLen * 2 + 1;
+
 public:
 	int quantity;
 	double price; //total price

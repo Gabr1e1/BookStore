@@ -18,7 +18,7 @@ double stringToDouble(const std::string &str)
 
 dataSystem::dataSystem(const std::string &file)
 {
-	dataIO.open(file);
+	dataIO.open(file, std::ios::binary | std::ios::app | std::ios::out);
 	dataIO.seekg(0);
 	dataIO.read(reinterpret_cast<char*>(&size), sizeof(size));
 	if (!dataIO) size = 0, dataIO.write(reinterpret_cast<char*>(&size), sizeof(size));

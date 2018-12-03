@@ -3,10 +3,10 @@
 CommandSystem::CommandSystem(const std::string &file)
 {
 	dataIO.open(file, std::ios::out | std::ios::app);
-	ISBNDatabase = new Database("ISBNDatabase.txt", 0, ISBNLen);
-	nameDatabase = new Database("nameDatabase.txt", ISBNLen, StringLen);
-	authorDatabase = new Database("authorDatabase.txt", ISBNLen + StringLen, StringLen);
-	keywordDatabase = new Database("keywordDatabase.txt", ISBNLen + StringLen * 2, StringLen);
+	ISBNDatabase = new Database("ISBNDatabase.txt", 0, DataType::DataType::ISBNLen);
+	nameDatabase = new Database("nameDatabase.txt", DataType::ISBNLen, DataType::DataType::StringLen);
+	authorDatabase = new Database("authorDatabase.txt", DataType::ISBNLen + DataType::StringLen, DataType::StringLen);
+	keywordDatabase = new Database("keywordDatabase.txt", DataType::ISBNLen + DataType::StringLen * 2, DataType::StringLen);
 }
 
 CommandSystem::~CommandSystem()
@@ -22,7 +22,7 @@ CommandSystem::~CommandSystem()
 std::vector<std::string> CommandSystem::parse(std::string str)
 {
 	std::vector<std::string> ret;
-	int p = str.find(" ");
+	size_t p = str.find(" ");
 	while (p != std::string::npos)
 	{
 		ret.push_back(str.substr(0, p));
@@ -88,7 +88,7 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 	if (cmd == "select")
 	{
 		curSelected.clear();
-		curSelected.push_back(ISBNDatabase->read(token[1]));
+		curSelected.push_back(ISBNDatabase->read(token[1], token[1]));
 	}
 	else if (cmd == "modify")
 	{
@@ -156,7 +156,7 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 	{
 		auto t = ISBNDatabase->read(token[1], token[1]);
 		int quantity = stringToInteger(token[2]);
-		Finance->addEvent(t.price * quantity, quantity, true);
+		Finance->addEvent(quantity, t.price * quantity, true);
 	}
 	else throw("Invalid");
 
@@ -182,5 +182,13 @@ ResultType CommandSystem::runCommand(const std::string &str)
 
 ResultType CommandSystem::runLoadCommand(const std::string &file)
 {
-
+	std::ifstream fileCommandIO(file, std::ios::binary|std::ios::in);
+	char r[maxCommandLen];
+	while (fileCommandIO.getline(r, maxCommandLen))
+	{
+		std::string str = r;
+		auto t = runCommand(str);
+		if (t == Exit) return Exit;
+	}
+	return Executed;
 }

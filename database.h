@@ -1,24 +1,23 @@
 #ifndef Database_H
 #define Database_H
 
-#include "dataSystem.h"
-
 #include <iostream>
 #include <string>
 #include <vector>
 #include <sstream>
 #include <fstream>
+#include <exception>
+#include <iomanip>
 
-static const int ISBNLen = 20;
-static const int StringLen = 40;
-static const int DataTypeLen = ISBNLen + StringLen * 3 + sizeof(int) + sizeof(double) + 1;
-
-static const int BlockSize = 100;
-static const int BlockLen = sizeof(int) * 2 + BlockSize * DataTypeLen;
-
+#include "dataSystem.h"
 
 class DataType
 {
+public:
+	static const int ISBNLen = 20;
+	static const int StringLen = 40;
+	static const int DataTypeLen = ISBNLen + StringLen * 3 + sizeof(int) + sizeof(double) + 1;
+
 public:
 	std::string ISBN; //aligned to 20 characters
 	std::string name, author, keyword; //aligned to 40 characters(20 chinese characters)
@@ -40,6 +39,10 @@ public:
 
 class Database
 {
+public:
+	static const int BlockSize = 100;
+	static const int BlockLen = sizeof(int) * 2 + BlockSize * DataType::DataTypeLen;
+
 private:
 	std::fstream dataIO;
 	int offset, readLen; //offset used when reading a DataType
