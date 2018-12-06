@@ -4,3 +4,5 @@ x64/*
 Bookstore.vcxproj
 
 Bookstore.vcxproj.filters
+
+*.txt
