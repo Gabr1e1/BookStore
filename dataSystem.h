@@ -6,6 +6,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <iostream>
 
 int stringToInteger(const std::string &str);
 double stringToDouble(const std::string &str);

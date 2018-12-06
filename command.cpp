@@ -2,7 +2,9 @@
 
 CommandSystem::CommandSystem(const std::string &file)
 {
-	dataIO.open(file, std::ios::out | std::ios::app);
+	dataIO.open(file, std::ios::binary | std::ios::out | std::ios::in);
+	Account = new AccountSystem("AccountSystem.txt");
+	Finance = new FinanceSystem("FinanceSystem.txt");
 	ISBNDatabase = new Database("ISBNDatabase.txt", 0, DataType::DataType::ISBNLen);
 	nameDatabase = new Database("nameDatabase.txt", DataType::ISBNLen, DataType::DataType::StringLen);
 	authorDatabase = new Database("authorDatabase.txt", DataType::ISBNLen + DataType::StringLen, DataType::StringLen);
@@ -27,6 +29,7 @@ std::vector<std::string> CommandSystem::parse(std::string str)
 	{
 		ret.push_back(str.substr(0, p));
 		str = str.substr(p + 1, str.length() - 1 - p);
+		p = str.find(" ");
 	}
 	ret.push_back(str);
 	return ret;
@@ -60,26 +63,39 @@ ResultType CommandSystem::userCommand(std::vector<std::string> token)
 {
 	std::string cmd = token[0];
 
-	if (cmd == "su") Account->login(token[1], token[2]);
-	else if (cmd == "logout") Account->logout();
+	if (cmd == "su")
+	{
+		if (token.size() != 3) throw std::exception("Invalid");
+		Account->login(token[1], token[2]);
+	}
+	else if (cmd == "logout")
+	{
+		if (token.size() != 1) throw std::exception("Invalid");
+		Account->logout();
+	}
 	else if (cmd == "useradd")
 	{
+		if (token.size() != 5) throw std::exception("Invalid");
 		Account->add(token[3][0] - '0', token[1], token[2], token[4]);
 	}
 	else if (cmd == "register")
 	{
-		Account->add(1, token[1], token[2], token[3]);
+		if (token.size() != 4) throw std::exception("Invalid");
+		Account->addRegister(token[1], token[2], token[3]);
 	}
-	else if (cmd == "delete") Account->erase(token[1]);
+	else if (cmd == "delete")
+	{
+		if (token.size() != 3) throw std::exception("Invalid");
+		Account->erase(token[1]);
+	}
 	else if (cmd == "passwd")
 	{
 		if (token.size() == 3) Account->changePassword(token[1], token[2]);
-		else Account->changePassword(token[1], token[3], token[2]);
+		else if (token.size() == 4) Account->changePassword(token[1], token[3], token[2]);
+		else throw std::exception("Invalid");
 	}
 	return Executed;
 }
-
-//Todo: negative number
 
 ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 {
@@ -92,7 +108,7 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 	}
 	else if (cmd == "modify")
 	{
-		if (curSelected.size() != 1) throw("Invalid");
+		if (curSelected.size() != 1) throw std::exception("Invalid");
 		DataType t = curSelected[0];
 		for (size_t i = 1; i < token.size(); i++)
 		{
@@ -121,13 +137,13 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 	}
 	else if (cmd == "import")
 	{
-		if (curSelected.size() != 1) throw("Invalid");
+		if (curSelected.size() != 1) throw std::exception("Invalid");
 		DataType t = curSelected[0];
 		Finance->addEvent(stringToInteger(token[1]), stringToDouble(token[2]), false);
 	}
 	else if (cmd == "show" && token[1] != "finance")
 	{
-		if (token.size() != 2) throw("Invalid");
+		if (token.size() != 2) throw std::exception("Invalid");
 		curSelected.clear();
 		if (token[1].substr(0, 5) == "-ISBN")
 		{
@@ -158,7 +174,7 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 		int quantity = stringToInteger(token[2]);
 		Finance->addEvent(quantity, t.price * quantity, true);
 	}
-	else throw("Invalid");
+	else throw std::exception("Invalid");
 
 	return Executed;
 }
@@ -166,7 +182,7 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 ResultType CommandSystem::runCommand(const std::string &str)
 {
 	auto token = parse(str);
-	std::string cmd = cmd;
+	std::string cmd = token[0];
 
 	if (cmd == "exit") return Exit;
 	if (cmd == "load") return runLoadCommand(token[1]);
@@ -177,18 +193,27 @@ ResultType CommandSystem::runCommand(const std::string &str)
 	if (cmd == "select" || cmd == "modify" || cmd == "import" || cmd == "show" || cmd == "buy")
 		return dataCommand(token);
 
-	throw("Invalid");
+	throw std::exception("Invalid");
 }
 
 ResultType CommandSystem::runLoadCommand(const std::string &file)
 {
-	std::ifstream fileCommandIO(file, std::ios::binary|std::ios::in);
+	std::ifstream fileCommandIO(file, std::ios::binary | std::ios::in);
 	char r[maxCommandLen];
 	while (fileCommandIO.getline(r, maxCommandLen))
 	{
 		std::string str = r;
-		auto t = runCommand(str);
-		if (t == Exit) return Exit;
+		while (str[str.length() - 1] == '\r') str = str.substr(0, str.length() - 1);
+		try
+		{
+			std::cout << str << std::endl;
+			auto t = runCommand(str);
+			if (t == Exit) return Exit;
+		}
+		catch (std::exception &error)
+		{
+			std::cout << error.what() << std::endl;
+		}
 	}
 	return Executed;
 }

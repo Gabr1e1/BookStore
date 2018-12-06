@@ -41,6 +41,7 @@ std::string DataType::printToString()
 
 Database::Database(const std::string &file, int _offset, int len) : offset(_offset), readLen(len)
 {
+	std::ofstream tmp(file, std::ios::app); tmp.close();
 	dataIO.open(file, std::ios::binary | std::ios::app | std::ios::out);
 	dataIO.seekg(0);
 	dataIO.read(reinterpret_cast<char*>(&startAddress), sizeof(int));

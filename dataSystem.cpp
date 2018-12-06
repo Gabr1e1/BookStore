@@ -18,10 +18,21 @@ double stringToDouble(const std::string &str)
 
 dataSystem::dataSystem(const std::string &file)
 {
-	dataIO.open(file, std::ios::binary | std::ios::app | std::ios::out);
-	dataIO.seekg(0);
-	dataIO.read(reinterpret_cast<char*>(&size), sizeof(size));
-	if (!dataIO) size = 0, dataIO.write(reinterpret_cast<char*>(&size), sizeof(size));
+	std::ofstream tmp(file/*, std::ios::app*/); tmp.close();
+	dataIO.open(file, std::ios::binary | std::ios::out | std::ios::in);
+	dataIO.seekg(0, std::ios::end);
+	
+	if (!dataIO.gcount())
+	{
+		size = 0;
+		dataIO.write(reinterpret_cast<const char*>(&size), sizeof(size));
+		if (!dataIO) throw std::exception("Create file failed");
+	}
+	else
+	{
+		dataIO.seekg(std::ios::beg);
+		dataIO.read(reinterpret_cast<char*>(&size), sizeof(size));
+	}
 }
 
 dataSystem::~dataSystem()
@@ -31,17 +42,24 @@ dataSystem::~dataSystem()
 
 void dataSystem::printToBack(const std::string &str)
 {
+	dataIO.seekg(0, std::ios::end);
 	auto *t = str.c_str();
 	dataIO.write(t, str.length());
-	delete[] t;
+	if (!dataIO) throw std::exception("Write Failed");
 }
 
 std::string dataSystem::read(int address, int len)
 {
-	char *t = new char[len];
+	char *t = new char[len + 1];
+	for (int i = 0; i < len + 1; i++) t[i] = 0;
 	dataIO.seekg(address);
-	dataIO.write(t, len);
-	std::string ret = t;
+	dataIO.read(t, len);
+	std::string ret = "";
+	for (int i = 0; i < len + 1; i++)
+	{
+		if (t[i] == 0 || t[i] == ' ') break;
+		else ret += t[i];
+	}
 	delete[] t;
 	return ret;
 }

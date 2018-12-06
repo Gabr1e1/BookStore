@@ -26,6 +26,7 @@ private:
 public:
 	User(int _level, const std::string &_id,
 		const std::string &_name, const std::string &_password);
+	~User() = default;
 
 public:
 	std::string printToString();
@@ -48,6 +49,8 @@ private:
 
 public:
 	void add(int level, const std::string &userId,
+		const std::string &password, const std::string &name);
+	void addRegister(const std::string &userId,
 		const std::string &password, const std::string &name);
 	void erase(const std::string &userId);
 	void changePassword(const std::string &userId, const std::string &newPassword,

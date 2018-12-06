@@ -10,6 +10,7 @@ User::User(const int _level, const std::string &_id,
 std::string User::printToString()
 {
 	std::ostringstream ret;
+	ret.setf(std::ios::left);
 	ret << std::setw(User::NumLen) << level;
 	ret << std::setw(User::StringLen) << userId;
 	ret << std::setw(User::StringLen) << name;
@@ -17,13 +18,16 @@ std::string User::printToString()
 	return ret.str() + (char)(deleted + '0');
 }
 
-AccountSystem::AccountSystem(const std::string &file) : dataSystem(file), curLevel(0)
+AccountSystem::AccountSystem(const std::string &file) : dataSystem(file)
 {
 	if (size == 0)
 	{
 		User root(7, "root", "root", "sjtu");
 		printToBack(root.printToString());
+		size = 1;
 	}
+	curLevel = 7;
+	curUserId = "root";
 }
 
 AccountSystem::~AccountSystem()
@@ -34,17 +38,17 @@ AccountSystem::~AccountSystem()
 
 std::string AccountSystem::readUserId(int address)
 {
-	return read(address + User::User::NumLen, User::User::StringLen);
+	return read(address + User::NumLen, User::StringLen);
 }
 
 std::string AccountSystem::readPassword(int address)
 {
-	return read(address + User::User::NumLen + 2 * User::User::StringLen, User::User::StringLen);
+	return read(address + User::NumLen + 2 * User::StringLen, User::StringLen);
 }
 
 int AccountSystem::readLevel(int address)
 {
-	return read(address, User::User::NumLen)[0] - '0';
+	return read(address, User::NumLen)[0] - '0';
 }
 
 void AccountSystem::add(int level, const std::string &userId,
@@ -53,6 +57,15 @@ void AccountSystem::add(int level, const std::string &userId,
 	if (!(curLevel >= 3)) throw std::exception("Invalid");
 	if (level >= curLevel) throw std::exception("Invalid");
 	User cur(level, userId, name, password);
+	printToBack(cur.printToString());
+	size++;
+}
+
+void AccountSystem::addRegister(const std::string &userId,
+	const std::string &password, const std::string &name)
+{
+	if (!(curLevel >= 0)) throw std::exception("Invalid");
+	User cur(1, userId, name, password);
 	printToBack(cur.printToString());
 	size++;
 }
@@ -79,8 +92,7 @@ void AccountSystem::changePassword(const std::string &userId, const std::string 
 	const std::string &oldPassword)
 {
 	if (!(curLevel >= 1)) throw std::exception("Invalid");
-	int curAddress = 0;
-	dataIO.seekg(curAddress);
+	int curAddress = sizeof(int);
 	for (int i = 1; i <= size; i++)
 	{
 		std::string curUserId = readUserId(curAddress);
@@ -89,10 +101,12 @@ void AccountSystem::changePassword(const std::string &userId, const std::string 
 			std::string curPassword = readPassword(curAddress);
 			if (curPassword == oldPassword || curLevel == 7)
 			{
-				write(curAddress + User::NumLen + 2 * User::StringLen, newPassword);
+				std::ostringstream ret; ret.setf(std::ios::left);
+				ret << std::setw(User::StringLen) << newPassword;
+				write(curAddress + User::NumLen + 2 * User::StringLen, ret.str());
 				return;
 			}
-			else throw("Inavlid");
+			else throw std::exception("Invalid");
 		}
 		curAddress += User::UserLen;
 	}
@@ -101,8 +115,7 @@ void AccountSystem::changePassword(const std::string &userId, const std::string 
 
 void AccountSystem::login(const std::string &userId, const std::string &password)
 {
-	int curAddress = 0;
-	dataIO.seekg(curAddress);
+	int curAddress = sizeof(int);
 	for (int i = 1; i <= size; i++)
 	{
 		std::string curUserId = readUserId(curAddress);
@@ -116,8 +129,9 @@ void AccountSystem::login(const std::string &userId, const std::string &password
 				curLevel = level;
 				return;
 			}
-			else throw("Inavlid");
+			else throw std::exception("Invalid");
 		}
+		curAddress += User::UserLen;
 	}
 	throw std::exception("Invalid");
 }
@@ -125,5 +139,6 @@ void AccountSystem::login(const std::string &userId, const std::string &password
 void AccountSystem::logout()
 {
 	curLevel = 0;
+	curUserId = "";
 }
 
