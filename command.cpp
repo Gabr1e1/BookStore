@@ -35,8 +35,23 @@ std::vector<std::string> CommandSystem::parse(std::string str)
 	return ret;
 }
 
-void CommandSystem::modify(DataType data)
+void CommandSystem::erase(DataType data)
 {
+	ISBNDatabase->erase(data.ISBN, data.ISBN);
+	nameDatabase->erase(data.name, data.ISBN);
+	authorDatabase->erase(data.author, data.ISBN);
+	std::string keyword = data.keyword;
+	while (keyword.find("|") != std::string::npos)
+	{
+		data.keyword = keyword.substr(0, keyword.find("|") - 1);
+		keywordDatabase->erase(data.keyword, data.ISBN);
+		keyword = keyword.substr(keyword.find("|") + 1, keyword.length() - 1 - keyword.find("|"));
+	}
+}
+
+void CommandSystem::modify(DataType old, DataType data)
+{
+	erase(old);
 	ISBNDatabase->write(data.ISBN, data, data.ISBN);
 	nameDatabase->write(data.name, data, data.ISBN);
 	authorDatabase->write(data.author, data, data.ISBN);
@@ -45,6 +60,7 @@ void CommandSystem::modify(DataType data)
 	{
 		data.keyword = keyword.substr(0, keyword.find("|") - 1);
 		keywordDatabase->write(data.keyword, data, data.ISBN);
+		keyword = keyword.substr(keyword.find("|") + 1, keyword.length() - 1 - keyword.find("|"));
 	}
 }
 
@@ -105,11 +121,12 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 	{
 		curSelected.clear();
 		curSelected.push_back(ISBNDatabase->read(token[1], token[1]));
+		curSelected[0].ISBN = token[1]; //set default ISBN number, also apply when a book has already been created
 	}
 	else if (cmd == "modify")
 	{
 		if (curSelected.size() != 1) throw std::exception("Invalid");
-		DataType t = curSelected[0];
+		DataType &t = curSelected[0], backup = curSelected[0];
 		for (size_t i = 1; i < token.size(); i++)
 		{
 			if (token[i].substr(0, 5) == "-ISBN")
@@ -130,18 +147,18 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 			}
 			else if (token[i].substr(0, 6) == "-price")
 			{
-				t.price = stringToInteger(token[i].substr(7, token[i].length() - 7));
+				t.price = stringToDouble(token[i].substr(7, token[i].length() - 7));
 			}
 		}
-		modify(t);
+		modify(backup, t);
 	}
 	else if (cmd == "import")
 	{
 		if (curSelected.size() != 1) throw std::exception("Invalid");
-		DataType t = curSelected[0];
+		DataType &t = curSelected[0];
 		Finance->addEvent(stringToInteger(token[1]), stringToDouble(token[2]), false);
 	}
-	else if (cmd == "show" && token[1] != "finance")
+	else if (cmd == "show" && (token.size() == 1 || token[1] != "finance"))
 	{
 		if (token.size() != 2) throw std::exception("Invalid");
 		curSelected.clear();

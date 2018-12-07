@@ -30,7 +30,7 @@ dataSystem::dataSystem(const std::string &file)
 	}
 	else
 	{
-		dataIO.seekg(std::ios::beg);
+		dataIO.seekg(0, std::ios::beg);
 		dataIO.read(reinterpret_cast<char*>(&size), sizeof(size));
 	}
 }
@@ -54,12 +54,9 @@ std::string dataSystem::read(int address, int len)
 	for (int i = 0; i < len + 1; i++) t[i] = 0;
 	dataIO.seekg(address);
 	dataIO.read(t, len);
-	std::string ret = "";
-	for (int i = 0; i < len + 1; i++)
-	{
-		if (t[i] == 0 || t[i] == ' ') break;
-		else ret += t[i];
-	}
+	std::string ret = t;
+	while (ret.length() != 0 && (ret[ret.length() - 1] == ' ' || ret[ret.length() - 1] == 0))
+		ret = ret.substr(0, ret.length() - 1);
 	delete[] t;
 	return ret;
 }

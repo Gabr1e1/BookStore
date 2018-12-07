@@ -37,7 +37,8 @@ public:
 
 private:
 	std::vector<std::string> parse(std::string str);
-	void modify(DataType data);
+	void erase(DataType data);
+	void modify(DataType old, DataType data);
 
 private:
 	ResultType userCommand(std::vector<std::string> token);
