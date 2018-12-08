@@ -19,6 +19,7 @@ Task list:
 4. 判断是否已经存在改文件 ✔
 5. 多次modify合并为一次
 6. size of curSelected should always be one
+7. 写法简化：例如curAddress
 
 Note:
 
