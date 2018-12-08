@@ -10,6 +10,7 @@
 #include <iomanip>
 
 #include "dataSystem.h"
+#include <cassert>
 
 std::string formatSubstr(const std::string &str, int start, int len);
 
@@ -56,7 +57,6 @@ private:
 	std::string readWholeBlock(int address);
 	void writeWholeBlock(int address, const std::string &str);
 	bool inCurBlock(std::string key, std::string uniqueKey, int curSize);
-
 	std::vector<DataType> readInsideBlock(std::string key, int address, int size, std::string uniqueKey = "");
 	void eraseInsideBlock(std::string &key, int address, int size, std::string uniqueKey);
 	void writeInsideBlock(std::string &key, int address, int size, std::string uniqueKey, std::string value = "");

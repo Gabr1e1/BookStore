@@ -17,9 +17,14 @@ Task list:
 2. Add & specifier (write : const char*)
 3. **把Account System 和 Finance System 做成继承一个基类System的 ** ✔
 4. 判断是否已经存在改文件 ✔
+5. 多次modify合并为一次
+6. size of curSelected should always be one
 
 Note:
 
 1. 读取或者写入的时候错误都会直接让这个fstream不可用！
 
 2. std::ios::beg, end, in之类的全都是一个数值，不能直接seekg(std::ios::beg), 这就相当于在seekg一个普通的数
+
+
+

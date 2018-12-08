@@ -43,7 +43,8 @@ void CommandSystem::erase(DataType data)
 	std::string keyword = data.keyword;
 	while (keyword.find("|") != std::string::npos)
 	{
-		data.keyword = keyword.substr(0, keyword.find("|") - 1);
+		data.keyword = keyword.substr(0, keyword.find("|"));
+		//std::cerr << "Old Keyword: " << data.keyword << std::endl;
 		keywordDatabase->erase(data.keyword, data.ISBN);
 		keyword = keyword.substr(keyword.find("|") + 1, keyword.length() - 1 - keyword.find("|"));
 	}
@@ -58,7 +59,8 @@ void CommandSystem::modify(DataType old, DataType data)
 	std::string keyword = data.keyword;
 	while (keyword.find("|") != std::string::npos)
 	{
-		data.keyword = keyword.substr(0, keyword.find("|") - 1);
+		data.keyword = keyword.substr(0, keyword.find("|"));
+		//std::cerr << "New Keyword: " << data.keyword << std::endl;
 		keywordDatabase->write(data.keyword, data, data.ISBN);
 		keyword = keyword.substr(keyword.find("|") + 1, keyword.length() - 1 - keyword.find("|"));
 	}
@@ -68,10 +70,9 @@ void CommandSystem::printSelected()
 {
 	for (auto u : curSelected)
 	{
-		double p = (double)u.price / u.quantity;
 		std::cout.setf(std::ios::fixed);
 		std::cout << u.ISBN << "\t" << u.name << "\t" << u.author << "\t" << u.keyword << "\t";
-		std::cout << std::setprecision(2) << p << "\t" << u.quantity << "±¾" << "\n";
+		std::cout << std::setprecision(2) << u.price << "\t" << u.quantity << "±¾" << "\n";
 	}
 }
 
@@ -121,6 +122,7 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 	{
 		curSelected.clear();
 		curSelected.push_back(ISBNDatabase->read(token[1], token[1]));
+		if (curSelected.size() != 1) throw std::exception("Invalid");
 		curSelected[0].ISBN = token[1]; //set default ISBN number, also apply when a book has already been created
 	}
 	else if (cmd == "modify")
@@ -155,10 +157,17 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 	else if (cmd == "import")
 	{
 		if (curSelected.size() != 1) throw std::exception("Invalid");
-		DataType &t = curSelected[0];
+		DataType &t = curSelected[0], backup = curSelected[0];
+		t.quantity += stringToInteger(token[1]);
+		modify(backup, t);
 		Finance->addEvent(stringToInteger(token[1]), stringToDouble(token[2]), false);
 	}
-	else if (cmd == "show" && (token.size() == 1 || token[1] != "finance"))
+	else if (cmd == "show" && token.size() == 1)
+	{
+		curSelected = ISBNDatabase->readAll("");
+		printSelected();
+	}
+	else if (cmd == "show" && (token.size() > 1 || token[1] != "finance"))
 	{
 		if (token.size() != 2) throw std::exception("Invalid");
 		curSelected.clear();
@@ -185,7 +194,7 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 		if (token.size() == 1) Finance->printTotal();
 		else Finance->printEvent(stringToInteger(token[1]));
 	}
-	else if (cmd == "BUY")
+	else if (cmd == "buy")
 	{
 		auto t = ISBNDatabase->read(token[1], token[1]);
 		int quantity = stringToInteger(token[2]);
@@ -223,7 +232,7 @@ ResultType CommandSystem::runLoadCommand(const std::string &file)
 		while (str[str.length() - 1] == '\r') str = str.substr(0, str.length() - 1);
 		try
 		{
-			std::cout << str << std::endl;
+			//std::cerr << str << std::endl;
 			auto t = runCommand(str);
 			if (t == Exit) return Exit;
 		}
