@@ -14,7 +14,7 @@
 
 enum ResultType { Executed, Exit };
 
-class CommandSystem
+class CommandSystem : public dataSystem
 {
 public:
 	static const int maxCommandLen = 200;
@@ -50,4 +50,4 @@ public:
 	ResultType runLoadCommand(const std::string &file);
 };
 
-#endif Command_H
+#endif

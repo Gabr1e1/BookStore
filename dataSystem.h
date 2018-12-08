@@ -7,6 +7,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <stdexcept>
 
 int stringToInteger(const std::string &str);
 double stringToDouble(const std::string &str);
@@ -27,4 +28,4 @@ protected:
 	void write(int address, const std::string &str);
 };
 
-#endif DataSystem_H
+#endif

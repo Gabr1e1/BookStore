@@ -8,8 +8,15 @@
 
 int main()
 {
-	std::cout << "Bookstore System" << std::endl;
 	CommandSystem *command = new CommandSystem("CommandSystem.txt");
+
+	std::ifstream file("command.txt");
+	auto t = command->runCommand("load command.txt");
+	if (t == Exit)
+	{
+		delete command;
+		return 0;
+	}
 
 	while (true)
 	{
@@ -25,6 +32,6 @@ int main()
 			std::cout << error.what() << std::endl;
 		}
 	}
-
 	delete command;
+	return 0;
 }

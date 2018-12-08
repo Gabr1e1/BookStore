@@ -45,4 +45,4 @@ public:
 	void printEvent(int time = 0);
 };
 
-#endif Finance_H
+#endif

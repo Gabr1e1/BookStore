@@ -18,15 +18,15 @@ double stringToDouble(const std::string &str)
 
 dataSystem::dataSystem(const std::string &file)
 {
-	std::ofstream tmp(file/*, std::ios::app*/); tmp.close();
+	std::ofstream tmp(file, std::ios::app); tmp.close();
 	dataIO.open(file, std::ios::binary | std::ios::out | std::ios::in);
 	dataIO.seekg(0, std::ios::end);
 	
-	if (!dataIO.gcount())
+	if (!dataIO.tellg())
 	{
 		size = 0;
 		dataIO.write(reinterpret_cast<const char*>(&size), sizeof(size));
-		if (!dataIO) throw std::exception("Create file failed");
+		if (!dataIO) throw std::logic_error("Create file failed");
 	}
 	else
 	{
@@ -45,7 +45,7 @@ void dataSystem::printToBack(const std::string &str)
 	dataIO.seekg(0, std::ios::end);
 	auto *t = str.c_str();
 	dataIO.write(t, str.length());
-	if (!dataIO) throw std::exception("Write Failed");
+	if (!dataIO) throw std::logic_error("Write Failed");
 }
 
 std::string dataSystem::read(int address, int len)
@@ -55,8 +55,7 @@ std::string dataSystem::read(int address, int len)
 	dataIO.seekg(address);
 	dataIO.read(t, len);
 	std::string ret = t;
-	while (ret.length() != 0 && (ret[ret.length() - 1] == ' ' || ret[ret.length() - 1] == 0))
-		ret = ret.substr(0, ret.length() - 1);
+	while (ret.length() != 0 && (ret[ret.length() - 1] == ' ' || ret[ret.length() - 1] == 0)) ret.pop_back();
 	delete[] t;
 	return ret;
 }

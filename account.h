@@ -46,6 +46,8 @@ private:
 	int readLevel(int address);
 	std::string readUserId(int address);
 	std::string readPassword(int address);
+	bool readDeleted(int address);
+	bool exist(const std::string &userId);
 
 public:
 	void add(int level, const std::string &userId,
@@ -59,4 +61,4 @@ public:
 	void logout();
 };
 
-#endif Account_H
+#endif

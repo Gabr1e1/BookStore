@@ -6,7 +6,7 @@
 #include <vector>
 #include <sstream>
 #include <fstream>
-#include <exception>
+#include <stdexcept>
 #include <iomanip>
 
 #include "dataSystem.h"
@@ -29,9 +29,9 @@ public:
 
 public:
 	DataType() = default;
-	DataType(std::string str);
-	DataType(std::string _ISBN, std::string _name, std::string _author,
-		std::string _keyword, double _price, int _quantity);
+	DataType(const std::string &str);
+	DataType(const std::string &_ISBN, const std::string &_name, const std::string &_author,
+		const std::string &_keyword, double _price, int _quantity);
 
 public:
 	std::string printToString();
@@ -40,7 +40,7 @@ public:
 class Database
 {
 public:
-	static const int BlockSize = 1;
+	static const int BlockSize = 20;
 	static const int BlockLen = sizeof(int) * 2 + BlockSize * DataType::DataTypeLen;
 
 private:
@@ -56,19 +56,19 @@ private:
 	std::string readBlock(int offset, int len = BlockLen);
 	std::string readWholeBlock(int address);
 	void writeWholeBlock(int address, const std::string &str);
-	bool inCurBlock(std::string key, std::string uniqueKey, int curSize);
-	std::vector<DataType> readInsideBlock(std::string key, int address, int size, std::string uniqueKey = "");
-	void eraseInsideBlock(std::string &key, int address, int size, std::string uniqueKey);
-	void writeInsideBlock(std::string &key, int address, int size, std::string uniqueKey, std::string value = "");
+	bool inCurBlock(const std::string &key, const std::string &uniqueKey, int curSize);
+	std::vector<DataType> readInsideBlock(const std::string &key, int address, int size, const std::string &uniqueKey = "");
+	void eraseInsideBlock(const std::string &key, int address, int size, const std::string &uniqueKey);
+	void writeInsideBlock(const std::string &key, int address, int size, const std::string &uniqueKey, const std::string &value = "");
 	int split(int start, int beginEle, int size);
 	int createNewBlock(int size = 0, int next = -1); //create a new block without filling the elements
 	void cleanup();
 
 public:
-	DataType read(std::string key, std::string uniqueKey);
-	std::vector<DataType> readAll(std::string key);
-	void write(std::string key, DataType &data, std::string uniqueKey);
-	void erase(std::string key, std::string uniqueKey);
+	DataType read(const std::string &key, const std::string &uniqueKey);
+	std::vector<DataType> readAll(const std::string &key);
+	void write(const std::string &key, DataType &data, const std::string &uniqueKey);
+	void erase(const std::string &key, const std::string &uniqueKey);
 };
 
-#endif Database_H
+#endif
