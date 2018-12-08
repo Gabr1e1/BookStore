@@ -31,7 +31,7 @@ std::vector<std::string> CommandSystem::parse(std::string str)
 		str = str.substr(p + 1, str.length() - 1 - p);
 		p = str.find(" ");
 	}
-	ret.push_back(str);
+	if (str != "") ret.push_back(str);
 	return ret;
 }
 
@@ -82,8 +82,9 @@ ResultType CommandSystem::userCommand(std::vector<std::string> token)
 
 	if (cmd == "su")
 	{
-		if (token.size() != 3) throw std::exception("Invalid");
-		Account->login(token[1], token[2]);
+		if (token.size() == 3) Account->login(token[1], token[2]);
+		else if (token.size() == 2) Account->login(token[1]);
+		else throw std::exception("Invalid");
 	}
 	else if (cmd == "logout")
 	{
@@ -120,6 +121,7 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 
 	if (cmd == "select")
 	{
+		if (!(Account -> curLevel >= 3)) throw std::exception("Invalid");
 		curSelected.clear();
 		curSelected.push_back(ISBNDatabase->read(token[1], token[1]));
 		if (curSelected.size() != 1) throw std::exception("Invalid");
@@ -127,6 +129,7 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 	}
 	else if (cmd == "modify")
 	{
+		if (!(Account->curLevel >= 3)) throw std::exception("Invalid");
 		if (curSelected.size() != 1) throw std::exception("Invalid");
 		DataType &t = curSelected[0], backup = curSelected[0];
 		for (size_t i = 1; i < token.size(); i++)
@@ -134,6 +137,7 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 			if (token[i].substr(0, 5) == "-ISBN")
 			{
 				t.ISBN = token[i].substr(6, token[i].length() - 6);
+				if (ISBNDatabase->read(t.ISBN, t.ISBN).ISBN != "") throw std::exception("Invalid");
 			}
 			else if (token[i].substr(0, 5) == "-name")
 			{
@@ -156,6 +160,7 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 	}
 	else if (cmd == "import")
 	{
+		if (!(Account->curLevel >= 3)) throw std::exception("Invalid");
 		if (curSelected.size() != 1) throw std::exception("Invalid");
 		DataType &t = curSelected[0], backup = curSelected[0];
 		t.quantity += stringToInteger(token[1]);
@@ -164,15 +169,18 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 	}
 	else if (cmd == "show" && token.size() == 1)
 	{
+		if (!(Account->curLevel >= 1)) throw std::exception("Invalid");
 		curSelected = ISBNDatabase->readAll("");
 		printSelected();
 	}
-	else if (cmd == "show" && (token.size() > 1 || token[1] != "finance"))
+	else if (cmd == "show" && token.size() > 1 && token[1] != "finance")
 	{
+		if (!(Account->curLevel >= 1)) throw std::exception("Invalid");
 		if (token.size() != 2) throw std::exception("Invalid");
 		curSelected.clear();
 		if (token[1].substr(0, 5) == "-ISBN")
 		{
+
 			curSelected = ISBNDatabase->readAll(token[1].substr(6, token[1].length() - 6));
 		}
 		else if (token[1].substr(0, 5) == "-name")
@@ -191,17 +199,23 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 	}
 	else if (cmd == "show" && token[1] == "finance")
 	{
-		if (token.size() == 1) Finance->printTotal();
-		else Finance->printEvent(stringToInteger(token[1]));
+		if (!(Account->curLevel >= 7)) throw std::exception("Invalid");
+		if (token.size() == 2) Finance->printEvent();
+		else Finance->printEvent(stringToInteger(token[2]));
 	}
 	else if (cmd == "buy")
 	{
+		if (!(Account->curLevel >= 1)) throw std::exception("Invalid");
 		auto t = ISBNDatabase->read(token[1], token[1]);
+		auto backup = t;
 		int quantity = stringToInteger(token[2]);
+		if (t.quantity < quantity) throw std::exception("Invalid");
+		t.quantity -= quantity;
+		modify(backup, t);
 		Finance->addEvent(quantity, t.price * quantity, true);
 	}
 	else throw std::exception("Invalid");
-
+	
 	return Executed;
 }
 

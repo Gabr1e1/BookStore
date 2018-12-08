@@ -34,7 +34,7 @@ public:
 
 class AccountSystem : public dataSystem
 {
-private:
+public:
 	int curLevel;
 	std::string curUserId;
 

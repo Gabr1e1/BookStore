@@ -7,9 +7,9 @@ FinancialEvent::FinancialEvent(int q, double p, bool r) : quantity(q), price(p),
 
 FinancialEvent::FinancialEvent(const std::string &str)
 {
-	char *t = (char*)str.c_str();
-	quantity = *(reinterpret_cast<int*>(t));
-	price = *(reinterpret_cast<double*>(t + sizeof(int)));
+	const char *t = str.c_str();
+	quantity = *(reinterpret_cast<const int*>(t));
+	price = *(reinterpret_cast<const double*>(t + sizeof(int)));
 	isRevenue = (bool)(str[str.length() - 1] - '0');
 }
 
@@ -20,13 +20,8 @@ std::string FinancialEvent::printToString()
 		ret += *(reinterpret_cast<char*>(&quantity) + i);
 	for (size_t i = 0; i < sizeof(price); i++)
 		ret += *(reinterpret_cast<char*>(&price) + i);
+	ret += (char)(isRevenue + '0');
 	return ret;
-}
-
-void FinancialEvent::print()
-{
-	std::cout << (isRevenue) ? "+ " : "- ";
-	std::cout << price << "\n";
 }
 
 FinanceSystem::FinanceSystem(const std::string &file) : dataSystem(file)
@@ -36,12 +31,25 @@ FinanceSystem::FinanceSystem(const std::string &file) : dataSystem(file)
 
 FinanceSystem::~FinanceSystem()
 {
-	dataIO.seekg(std::ios::beg);
+	dataIO.seekg(0, std::ios::beg);
 	dataIO.write(reinterpret_cast<char*>(&size), sizeof(size));
+}
+
+std::string FinanceSystem::read(int address, int len)
+{
+	char *t = new char[len + 1];
+	for (int i = 0; i < len + 1; i++) t[i] = 0;
+	dataIO.seekg(address);
+	dataIO.read(t, len);
+	std::string ret = "";
+	for (int i = 0; i < len; i++) ret += t[i];
+	delete[] t;
+	return ret;
 }
 
 void FinanceSystem::addEvent(int quantity, double price, bool isRevenue)
 {
+	//std::cout << "Add Event: "<<quantity << " " << price << " " << isRevenue << std::endl;
 	printToBack(FinancialEvent(quantity, price, isRevenue).printToString());
 	size++;
 }
@@ -54,22 +62,17 @@ void FinanceSystem::addEvent(FinancialEvent &event)
 
 void FinanceSystem::printEvent(int time)
 {
+	if (time == 0) time = size;
+	time = std::min(time, size);
+	double priceRevenue = 0, pricePaid = 0;
 	int curAddress = sizeof(int) + (size - time) * FinancialEvent::FinancialEventLen;
 	for (int i = size - time + 1; i <= size; i++, curAddress += FinancialEvent::FinancialEventLen)
 	{
-		FinancialEvent(read(curAddress, FinancialEvent::FinancialEventLen)).print();
+		auto t = FinancialEvent(read(curAddress, FinancialEvent::FinancialEventLen));
+		if (t.isRevenue) priceRevenue += t.price;
+		else pricePaid += t.price;
 	}
+	std::cout.setf(std::ios::fixed);
+	std::cout << std::setprecision(2) << "+ " << priceRevenue << " - " << pricePaid << std::endl;
 }
 
-void FinanceSystem::printTotal()
-{
-	int quantity = 0;
-	double price = 0;
-	for (int i = 1, curAddress = sizeof(int); i <= size; i++, curAddress += FinancialEvent::FinancialEventLen)
-	{
-		FinancialEvent t = FinancialEvent(read(curAddress, FinancialEvent::FinancialEventLen));
-		price += t.price;
-		quantity += t.quantity;
-	}
-	FinancialEvent(quantity, price, quantity >= 0).print();
-}

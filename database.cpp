@@ -283,11 +283,13 @@ void Database::write(std::string key, DataType &data, std::string uniqueKey)
 		}
 		else
 		{
-			std::string strEnd = readBlock(curAddress + sizeof(int) + (curSize - 1) * DataType::DataType::DataTypeLen + offset, readLen);
-			std::string strEnd2 = readBlock(curAddress + sizeof(int) + (curSize - 1) * DataType::DataType::DataTypeLen, DataType::ISBNLen);
-			//std::cout << strEnd << " " << strEnd2 << std::endl;
-			if (make_pair(strEnd, strEnd2) < make_pair(key, uniqueKey)) pre = curAddress;
-			
+			if (curSize >= 1)
+			{
+				std::string strEnd = readBlock(curAddress + sizeof(int) + (curSize - 1) * DataType::DataType::DataTypeLen + offset, readLen);
+				std::string strEnd2 = readBlock(curAddress + sizeof(int) + (curSize - 1) * DataType::DataType::DataTypeLen, DataType::ISBNLen);
+				//std::cout << strEnd << " " << strEnd2 << std::endl;
+				if (make_pair(strEnd, strEnd2) < make_pair(key, uniqueKey)) pre = curAddress;
+			}
 			curAddress += BlockLen - sizeof(int);
 			dataIO.seekg(curAddress);
 			int next;

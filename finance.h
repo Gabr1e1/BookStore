@@ -4,14 +4,15 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <algorithm>
+#include <iomanip>
 
 #include "dataSystem.h"
 
 class FinancialEvent
 {
 public:
-	static const int NumLen = 9;
-	static const int FinancialEventLen = NumLen * 2 + 1;
+	static const int FinancialEventLen = sizeof(int) + sizeof(double) + 1;
 
 public:
 	int quantity;
@@ -24,7 +25,6 @@ public:
 
 public:
 	std::string printToString();
-	void print();
 };
 
 class FinanceSystem : public dataSystem
@@ -36,11 +36,13 @@ public:
 	FinanceSystem(const std::string &file);
 	~FinanceSystem();
 
+protected:
+	std::string read(int address, int len);
+
 public:
 	void addEvent(int quantity, double price, bool isRevenue);
 	void addEvent(FinancialEvent &event);
-	void printEvent(int time);
-	void printTotal();
+	void printEvent(int time = 0);
 };
 
 #endif Finance_H
