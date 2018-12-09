@@ -1,9 +1,11 @@
-
 Debug/*
 x64/*
-Bookstore.vcxproj
-
-Bookstore.vcxproj.filters
-
 *.txt
 *.md
+pch.cpp
+pch.h
+Bookstore.vcxproj.user
+Bookstore.vcxproj
+Bookstore.vcxproj.filters
+
+
