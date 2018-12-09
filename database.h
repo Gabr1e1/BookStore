@@ -40,7 +40,7 @@ public:
 class Database
 {
 public:
-	static const int BlockSize = 50;
+	static const int BlockSize = 100;
 	static const int BlockLen = sizeof(int) * 2 + BlockSize * DataType::DataTypeLen;
 
 private:

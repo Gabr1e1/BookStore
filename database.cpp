@@ -112,8 +112,8 @@ bool Database::inCurBlock(const std::string &key, const std::string &uniqueKey, 
 	int curAddress = (int)dataIO.tellg();
 	std::string &&strBegin = readBlock(curAddress + offset, readLen);
 	std::string &&strBegin2 = readBlock(curAddress, DataType::ISBNLen);
-	std::string &&strEnd = readBlock(curAddress + (curSize - 1) * DataType::DataType::DataTypeLen + offset, readLen);
-	std::string &&strEnd2 = readBlock(curAddress + (curSize - 1) * DataType::DataType::DataTypeLen, DataType::ISBNLen);
+	std::string &&strEnd = readBlock(curAddress + (curSize - 1) * DataType::DataTypeLen + offset, readLen);
+	std::string &&strEnd2 = readBlock(curAddress + (curSize - 1) * DataType::DataTypeLen, DataType::ISBNLen);
 	if (uniqueKey == "") strBegin2 = strEnd2 = "";
 	return (make_pair(key, uniqueKey) >= make_pair(strBegin, strBegin2))
 		&& (make_pair(key, uniqueKey) <= make_pair(strEnd, strEnd2));
@@ -328,8 +328,12 @@ void Database::eraseInsideBlock(const std::string &key, int address, int size,
 		std::string &&curKey = readBlock(address + offset, readLen);
 		if (cur == uniqueKey && curKey == key)
 		{
-			if (i + 1 <= size) split(start, i + 1, size);
-			dataIO.seekg(start - sizeof(int));
+			int tAdd = address;
+			for (int j = i + 1; j <= size; j++, tAdd += DataType::DataTypeLen)
+			{
+				writeWholeBlock(tAdd, readWholeBlock(tAdd + DataType::DataTypeLen));
+			}
+
 			int newSize = i - 1;
 			dataIO.write(reinterpret_cast<char*>(&newSize), sizeof(int));
 			return;
