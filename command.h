@@ -36,7 +36,7 @@ public:
 	~CommandSystem();
 
 private:
-	std::vector<std::string> parse(std::string str);
+	std::vector<std::string> parse(const std::string &str);
 	void erase(DataType data);
 	void modify(DataType old, DataType data);
 	void cleanup();

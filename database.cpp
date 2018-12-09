@@ -115,7 +115,7 @@ bool Database::inCurBlock(const std::string &key, const std::string &uniqueKey, 
 	std::string &&strEnd = readBlock(curAddress + (curSize - 1) * DataType::DataType::DataTypeLen + offset, readLen);
 	std::string &&strEnd2 = readBlock(curAddress + (curSize - 1) * DataType::DataType::DataTypeLen, DataType::ISBNLen);
 	if (uniqueKey == "") strBegin2 = strEnd2 = "";
-	return (make_pair(key, uniqueKey) >= make_pair(strBegin, strBegin2)) 
+	return (make_pair(key, uniqueKey) >= make_pair(strBegin, strBegin2))
 		&& (make_pair(key, uniqueKey) <= make_pair(strEnd, strEnd2));
 }
 
@@ -149,8 +149,7 @@ DataType Database::read(const std::string &key, const std::string &uniqueKey)
 		}
 		else
 		{
-			curAddress += BlockLen - sizeof(int);
-			dataIO.seekg(curAddress);
+			dataIO.seekg(curAddress + BlockLen - sizeof(int));
 			int next;
 			dataIO.read(reinterpret_cast<char*>(&next), sizeof(next));
 			if (next == -1) break;
@@ -181,8 +180,7 @@ std::vector<DataType> Database::readAll(const std::string &key)
 		{
 			if (flg && key != "" && curSize != 0) break;
 		}
-		curAddress += BlockLen - sizeof(int);
-		dataIO.seekg(curAddress);
+		dataIO.seekg(curAddress + BlockLen - sizeof(int));
 		int next;
 		dataIO.read(reinterpret_cast<char*>(&next), sizeof(next));
 		if (next == -1) break;
@@ -231,7 +229,7 @@ int Database::split(int start, int beginEle, int size)
 }
 
 void Database::writeInsideBlock(const std::string &key, int address, int size,
-								const std::string &uniqueKey, const std::string &value)
+	const std::string &uniqueKey, const std::string &value)
 {
 	int pre = 0;
 	int start = address;
@@ -255,7 +253,7 @@ void Database::writeInsideBlock(const std::string &key, int address, int size,
 			return;
 		}
 		//std::cout << curKey << " " << cur << " " << key << " " << uniqueKey << std::endl;
-		if (make_pair(curKey,cur) < make_pair(key, uniqueKey)) pre = i;
+		if (make_pair(curKey, cur) < make_pair(key, uniqueKey)) pre = i;
 		else break; //break if the current key > key
 		address += DataType::DataTypeLen;
 	}
@@ -293,8 +291,7 @@ void Database::write(const std::string &key, DataType &data, const std::string &
 				//std::cerr << key << " " << strEnd << " " << (key > strEnd) << std::endl;
 				if (make_pair(strEnd, strEnd2) < make_pair(key, uniqueKey)) pre = curAddress;
 			}
-			curAddress += BlockLen - sizeof(int);
-			dataIO.seekg(curAddress);
+			dataIO.seekg(curAddress + BlockLen - sizeof(int));
 			int next;
 			dataIO.read(reinterpret_cast<char*>(&next), sizeof(next));
 			if (next == -1) break;
@@ -357,8 +354,7 @@ void Database::erase(const std::string &key, const std::string &uniqueKey)
 		}
 		else
 		{
-			curAddress += BlockLen - sizeof(int);
-			dataIO.seekg(curAddress);
+			dataIO.seekg(curAddress + BlockLen - sizeof(int));
 			int next;
 			dataIO.read(reinterpret_cast<char*>(&next), sizeof(next));
 			if (next == -1) break;
@@ -380,7 +376,7 @@ void Database::cleanup()
 		int next, nextSize;
 		dataIO.read(reinterpret_cast<char*>(&next), sizeof(next));
 		if (next == -1) break;
-		
+
 		dataIO.seekg(next);
 		dataIO.read(reinterpret_cast<char*>(&nextSize), sizeof(nextSize));
 		int nextOfNext;

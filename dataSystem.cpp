@@ -21,7 +21,7 @@ dataSystem::dataSystem(const std::string &file)
 	std::ofstream tmp(file, std::ios::app); tmp.close();
 	dataIO.open(file, std::ios::binary | std::ios::out | std::ios::in);
 	dataIO.seekg(0, std::ios::end);
-	
+
 	if (!dataIO.tellg())
 	{
 		size = 0;

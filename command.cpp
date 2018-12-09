@@ -22,7 +22,7 @@ CommandSystem::~CommandSystem()
 	if (keywordDatabase != nullptr) delete keywordDatabase;
 }
 
-std::vector<std::string> CommandSystem::parse(std::string str)
+std::vector<std::string> CommandSystem::parse(const std::string &str)
 {
 	std::vector<std::string> ret;
 	int quote = 0;
@@ -136,7 +136,7 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 
 	if (cmd == "select")
 	{
-		if (!(Account -> curLevel >= 3)) throw std::logic_error("Invalid");
+		if (!(Account->curLevel >= 3)) throw std::logic_error("Invalid");
 		curSelected.clear();
 		curSelected.push_back(ISBNDatabase->read(token[1], token[1]));
 		if (curSelected.size() != 1) throw std::logic_error("Invalid");
