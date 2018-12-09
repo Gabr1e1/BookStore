@@ -1,8 +1,5 @@
 #include "database.h"
 
-static const int NumLen = 9;
-static const int FinancialEventLen = NumLen * 2 + 1;
-
 std::string formatSubstr(const std::string &str, int start, int len)
 {
 	std::string ret = str.substr(start, len);
@@ -111,10 +108,9 @@ bool Database::inCurBlock(const std::string &key, const std::string &uniqueKey, 
 	if (curSize == 0) return false;
 	int curAddress = (int)dataIO.tellg();
 	std::string &&strBegin = readBlock(curAddress + offset, readLen);
-	std::string &&strBegin2 = readBlock(curAddress, DataType::ISBNLen);
+	std::string &&strBegin2 = (uniqueKey != "") ? readBlock(curAddress, DataType::ISBNLen) : "";
 	std::string &&strEnd = readBlock(curAddress + (curSize - 1) * DataType::DataTypeLen + offset, readLen);
-	std::string &&strEnd2 = readBlock(curAddress + (curSize - 1) * DataType::DataTypeLen, DataType::ISBNLen);
-	if (uniqueKey == "") strBegin2 = strEnd2 = "";
+	std::string &&strEnd2 = (uniqueKey != "") ? readBlock(curAddress + (curSize - 1) * DataType::DataTypeLen, DataType::ISBNLen) : "";
 	return (make_pair(key, uniqueKey) >= make_pair(strBegin, strBegin2))
 		&& (make_pair(key, uniqueKey) <= make_pair(strEnd, strEnd2));
 }
