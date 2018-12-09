@@ -264,12 +264,13 @@ void Database::writeInsideBlock(const std::string &key, int address, int size,
 		{
 			writeWholeBlock(tAdd + DataType::DataTypeLen, readWholeBlock(tAdd));
 		}
-		writeWholeBlock(tAdd, value);
+		writeWholeBlock(tAdd + DataType::DataTypeLen, value);
 		size++;
 		dataIO.seekg(start - sizeof(int));
 		dataIO.write(reinterpret_cast<char*>(&size), sizeof(size));
 		return;
 	}
+
 	int t = split(start, pre + 1, size);
 	int newBlock = createNewBlock(1, t);
 	//link the first block to the new block
