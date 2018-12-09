@@ -335,6 +335,7 @@ void Database::eraseInsideBlock(const std::string &key, int address, int size,
 			}
 
 			int newSize = i - 1;
+			dataIO.seekg(address);
 			dataIO.write(reinterpret_cast<char*>(&newSize), sizeof(int));
 			return;
 		}
