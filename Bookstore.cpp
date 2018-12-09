@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include <string>
-#include <exception>
+#include <stdexcept>
 
 int main()
 {
@@ -27,7 +27,7 @@ int main()
 			auto t = command->runCommand(str);
 			if (t == Exit) break;
 		}
-		catch (std::exception &error)
+		catch (std::logic_error &error)
 		{
 			std::cout << error.what() << std::endl;
 		}

@@ -53,6 +53,7 @@ void CommandSystem::erase(DataType data)
 		keywordDatabase->erase(data.keyword, data.ISBN);
 		keyword = keyword.substr(keyword.find("|") + 1, keyword.length() - 1 - keyword.find("|"));
 	}
+	keywordDatabase->erase(data.keyword, data.ISBN);
 }
 
 void CommandSystem::modify(DataType old, DataType data)
@@ -69,6 +70,7 @@ void CommandSystem::modify(DataType old, DataType data)
 		keywordDatabase->write(data.keyword, data, data.ISBN);
 		keyword = keyword.substr(keyword.find("|") + 1, keyword.length() - 1 - keyword.find("|"));
 	}
+	keywordDatabase->write(data.keyword, data, data.ISBN);
 }
 
 void CommandSystem::printSelected()
@@ -79,6 +81,14 @@ void CommandSystem::printSelected()
 		std::cout << u.ISBN << "\t" << u.name << "\t" << u.author << "\t" << u.keyword << "\t";
 		std::cout << std::setprecision(2) << u.price << "\t" << u.quantity << "±¾" << "\n";
 	}
+}
+
+void CommandSystem::cleanup()
+{
+	ISBNDatabase->cleanup();
+	nameDatabase->cleanup();
+	authorDatabase->cleanup();
+	keywordDatabase->cleanup();
 }
 
 ResultType CommandSystem::userCommand(std::vector<std::string> token)
@@ -223,7 +233,7 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 		Finance->addEvent(quantity, t.price * quantity, true);
 	}
 	else throw std::logic_error("Invalid");
-	
+	cleanup();
 	return Executed;
 }
 
