@@ -66,10 +66,10 @@ void CommandSystem::modify(DataType old, DataType data)
 	while (keyword.find("|") != std::string::npos)
 	{
 		data.keyword = keyword.substr(0, keyword.find("|"));
-		//std::cerr << "New Keyword: " << data.keyword << std::endl;
 		keywordDatabase->write(data.keyword, data, data.ISBN);
 		keyword = keyword.substr(keyword.find("|") + 1, keyword.length() - 1 - keyword.find("|"));
 	}
+	data.keyword = keyword;
 	keywordDatabase->write(data.keyword, data, data.ISBN);
 }
 
@@ -265,7 +265,7 @@ ResultType CommandSystem::runLoadCommand(const std::string &file)
 		while (str[str.length() - 1] == '\r') str = str.substr(0, str.length() - 1);
 		try
 		{
-			std::cerr << str << std::endl;
+			//std::cerr << str << std::endl;
 			auto t = runCommand(str);
 			if (t == Exit) return Exit;
 		}
