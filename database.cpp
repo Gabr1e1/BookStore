@@ -257,6 +257,19 @@ void Database::writeInsideBlock(const std::string &key, int address, int size,
 		else break; //break if the current key > key
 		address += DataType::DataTypeLen;
 	}
+	if (size + 1 <= BlockSize)
+	{
+		int tAdd = start + DataType::DataTypeLen * (size - 1);
+		for (int i = size; i >= pre + 1; i--, tAdd -= DataType::DataTypeLen)
+		{
+			writeWholeBlock(tAdd + DataType::DataTypeLen, readWholeBlock(tAdd));
+		}
+		writeWholeBlock(tAdd, value);
+		size--;
+		dataIO.seekg(start - sizeof(int));
+		dataIO.write(reinterpret_cast<char*>(&size), sizeof(size));
+		return;
+	}
 	int t = split(start, pre + 1, size);
 	int newBlock = createNewBlock(1, t);
 	//link the first block to the new block
