@@ -122,7 +122,7 @@ std::vector<DataType> Database::readInsideBlock(const std::string &key, int addr
 	{
 		std::string &&cur = readBlock(address + offset, readLen);
 		std::string &&curKey = readBlock(address, DataType::ISBNLen);
-		if ((cur == key || key == "") && (curKey == uniqueKey || uniqueKey == "")) ret.push_back(DataType(readWholeBlock(address)));
+		if ((key == "" || cur == key) && (uniqueKey == "" || curKey == uniqueKey)) ret.push_back(DataType(readWholeBlock(address)));
 		address += DataType::DataTypeLen;
 	}
 	return ret;
@@ -188,11 +188,21 @@ std::vector<DataType> Database::readAll(const std::string &key)
 int Database::createNewBlock(int size, int next)
 {
 	dataIO.seekg(0, std::ios::end);
-	int ret = dataIO.tellg();
+	int ret = (int)dataIO.tellg();
 	dataIO.write(reinterpret_cast<char*>(&size), sizeof(size));
 	dataIO.seekg(BlockLen - 2 * sizeof(int), std::ios::cur);
 	dataIO.write(reinterpret_cast<char*>(&next), sizeof(next));
 	return ret;
+}
+
+void Database::copyBlock(int from, int target, int len)
+{
+	char *t = new char[len];
+	dataIO.seekg(from);
+	dataIO.read(t, len);
+	dataIO.seekg(target);
+	dataIO.write(t, len);
+	delete[] t;
 }
 
 int Database::split(int start, int beginEle, int size)
@@ -218,8 +228,9 @@ int Database::split(int start, int beginEle, int size)
 	t += sizeof(int);
 	for (int i = beginEle; i <= size; i++, t += DataType::DataTypeLen, start += DataType::DataTypeLen)
 	{
-		std::string &&cur = readWholeBlock(start);
-		writeWholeBlock(t, cur);
+		copyBlock(start, t);
+		//std::string &&cur = readWholeBlock(start);
+		//writeWholeBlock(t, cur);
 	}
 	return t2;
 }
@@ -258,7 +269,8 @@ void Database::writeInsideBlock(const std::string &key, int address, int size,
 		int tAdd = start + DataType::DataTypeLen * (size - 1);
 		for (int i = size; i >= pre + 1; i--, tAdd -= DataType::DataTypeLen)
 		{
-			writeWholeBlock(tAdd + DataType::DataTypeLen, readWholeBlock(tAdd));
+			copyBlock(tAdd, tAdd + DataType::DataTypeLen);
+			//writeWholeBlock(tAdd + DataType::DataTypeLen, readWholeBlock(tAdd));
 		}
 		writeWholeBlock(tAdd + DataType::DataTypeLen, value);
 		size++;
@@ -341,7 +353,8 @@ void Database::eraseInsideBlock(const std::string &key, int address, int size,
 			int tAdd = address;
 			for (int j = i + 1; j <= size; j++, tAdd += DataType::DataTypeLen)
 			{
-				writeWholeBlock(tAdd, readWholeBlock(tAdd + DataType::DataTypeLen));
+				copyBlock(tAdd + DataType::DataTypeLen, tAdd);
+				//writeWholeBlock(tAdd, readWholeBlock(tAdd + DataType::DataTypeLen));
 			}
 
 			int newSize = size - 1;

@@ -62,7 +62,7 @@ private:
 	void writeInsideBlock(const std::string &key, int address, int size, const std::string &uniqueKey, const std::string &value = "");
 	int split(int start, int beginEle, int size);
 	int createNewBlock(int size = 0, int next = -1); //create a new block without filling the elements
-
+	void copyBlock(int from, int target, int len = DataType::DataTypeLen);
 public:
 	DataType read(const std::string &key, const std::string &uniqueKey);
 	std::vector<DataType> readAll(const std::string &key);
