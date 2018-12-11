@@ -9,7 +9,8 @@
 
 #include "dataSystem.h"
 #include "account.h"
-#include "database.h"
+#include "index.h"
+#include "maindb.h"
 #include "finance.h"
 
 enum ResultType { Executed, Exit };
@@ -26,10 +27,11 @@ private:
 private:
 	AccountSystem *Account;
 	FinanceSystem *Finance;
-	Database *ISBNDatabase;
-	Database *nameDatabase;
-	Database *authorDatabase;
-	Database *keywordDatabase;
+	MainDatabase *mainDatabase;
+	IndexDatabase *ISBNDatabase;
+	IndexDatabase *nameDatabase;
+	IndexDatabase *authorDatabase;
+	IndexDatabase *keywordDatabase;
 
 public:
 	CommandSystem(const std::string &file);

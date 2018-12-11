@@ -5,10 +5,11 @@ CommandSystem::CommandSystem(const std::string &file) : dataSystem(file)
 	dataIO.open(file, std::ios::binary | std::ios::out | std::ios::in);
 	Account = new AccountSystem("AccountSystem.txt");
 	Finance = new FinanceSystem("FinanceSystem.txt");
-	ISBNDatabase = new Database("ISBNDatabase.txt", 0, DataType::DataType::ISBNLen);
-	nameDatabase = new Database("nameDatabase.txt", DataType::ISBNLen, DataType::DataType::StringLen);
-	authorDatabase = new Database("authorDatabase.txt", DataType::ISBNLen + DataType::StringLen, DataType::StringLen);
-	keywordDatabase = new Database("keywordDatabase.txt", DataType::ISBNLen + DataType::StringLen * 2, DataType::StringLen);
+	mainDatabase = new MainDatabase("Maindatabase.txt");
+	ISBNDatabase = new IndexDatabase("ISBNDatabase.txt");
+	nameDatabase = new IndexDatabase("nameDatabase.txt");
+	authorDatabase = new IndexDatabase("authorDatabase.txt");
+	keywordDatabase = new IndexDatabase("keywordDatabase.txt");
 }
 
 CommandSystem::~CommandSystem()
@@ -16,6 +17,7 @@ CommandSystem::~CommandSystem()
 	dataIO.close();
 	if (Account != nullptr) delete Account;
 	if (Finance != nullptr) delete Finance;
+	if (mainDatabase != nullptr) delete mainDatabase;
 	if (ISBNDatabase != nullptr) delete ISBNDatabase;
 	if (nameDatabase != nullptr) delete nameDatabase;
 	if (authorDatabase != nullptr) delete authorDatabase;
@@ -45,32 +47,36 @@ void CommandSystem::erase(DataType data)
 	ISBNDatabase->erase(data.ISBN, data.ISBN);
 	nameDatabase->erase(data.name, data.ISBN);
 	authorDatabase->erase(data.author, data.ISBN);
+
 	std::string keyword = data.keyword;
 	while (keyword.find("|") != std::string::npos)
 	{
 		data.keyword = keyword.substr(0, keyword.find("|"));
-		//std::cerr << "Old Keyword: " << data.keyword << std::endl;
 		keywordDatabase->erase(data.keyword, data.ISBN);
 		keyword = keyword.substr(keyword.find("|") + 1, keyword.length() - 1 - keyword.find("|"));
 	}
+	data.keyword = keyword;
 	keywordDatabase->erase(data.keyword, data.ISBN);
 }
 
 void CommandSystem::modify(DataType old, DataType data)
 {
 	erase(old);
-	ISBNDatabase->write(data.ISBN, data, data.ISBN);
-	nameDatabase->write(data.name, data, data.ISBN);
-	authorDatabase->write(data.author, data, data.ISBN);
+	int address = mainDatabase->printToBack(data.printToString());
+
+	ISBNDatabase->write(data.ISBN, data.ISBN, IndexType(data.ISBN, data.ISBN, address).printToString());
+	nameDatabase->write(data.name, data.ISBN, IndexType(data.name, data.ISBN, address).printToString());
+	authorDatabase->write(data.author, data.ISBN, IndexType(data.author, data.ISBN, address).printToString());
+
 	std::string keyword = data.keyword;
 	while (keyword.find("|") != std::string::npos)
 	{
 		data.keyword = keyword.substr(0, keyword.find("|"));
-		keywordDatabase->write(data.keyword, data, data.ISBN);
+		keywordDatabase->write(data.keyword, data.ISBN, IndexType(data.keyword, data.ISBN, address).printToString());
 		keyword = keyword.substr(keyword.find("|") + 1, keyword.length() - 1 - keyword.find("|"));
 	}
 	data.keyword = keyword;
-	keywordDatabase->write(data.keyword, data, data.ISBN);
+	keywordDatabase->write(data.keyword, data.ISBN, IndexType(data.keyword, data.ISBN, address).printToString());
 }
 
 void CommandSystem::printSelected()
@@ -79,7 +85,7 @@ void CommandSystem::printSelected()
 	{
 		std::cout.setf(std::ios::fixed);
 		std::cout << u.ISBN << "\t" << u.name << "\t" << u.author << "\t" << u.keyword << "\t";
-		std::cout << std::setprecision(2) << u.price << "\t" << u.quantity << "æœ¬" << "\n";
+		std::cout << std::setprecision(2) << u.price << "\t" << u.quantity << "±¾" << "\n";
 	}
 }
 
@@ -138,7 +144,8 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 	{
 		if (!(Account->curLevel >= 3)) throw std::logic_error("Invalid");
 		curSelected.clear();
-		curSelected.push_back(ISBNDatabase->read(token[1], token[1]));
+		int s = ISBNDatabase->read(token[1], token[1]);
+		curSelected.push_back((s != 0) ? mainDatabase->read(s) : DataType());
 		if (curSelected.size() != 1) throw std::logic_error("Invalid");
 		curSelected[0].ISBN = token[1]; //set default ISBN number, also apply when a book has already been created
 	}
@@ -152,7 +159,7 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 			if (token[i].substr(0, 5) == "-ISBN")
 			{
 				t.ISBN = token[i].substr(6, token[i].length() - 6);
-				if (ISBNDatabase->read(t.ISBN, t.ISBN).ISBN != "") throw std::logic_error("Invalid");
+				if (ISBNDatabase->read(t.ISBN, t.ISBN)) throw std::logic_error("Invalid");
 			}
 			else if (token[i].substr(0, 5) == "-name")
 			{
@@ -179,13 +186,15 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 		if (curSelected.size() != 1) throw std::logic_error("Invalid");
 		DataType &t = curSelected[0], backup = curSelected[0];
 		t.quantity += stringToInteger(token[1]);
-		modify(backup, t);
+		modify(backup, t); //to be optimized
 		Finance->addEvent(stringToInteger(token[1]), stringToDouble(token[2]), false);
 	}
 	else if (cmd == "show" && token.size() == 1)
 	{
 		if (!(Account->curLevel >= 1)) throw std::logic_error("Invalid");
-		curSelected = ISBNDatabase->readAll("");
+		auto && tmp = ISBNDatabase->readAll("");
+		curSelected.clear();
+		for (auto t : tmp) curSelected.push_back(mainDatabase->read(t));
 		printSelected();
 	}
 	else if (cmd == "show" && token.size() > 1 && token[1] != "finance")
@@ -193,26 +202,24 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 		if (!(Account->curLevel >= 1)) throw std::logic_error("Invalid");
 		if (token.size() != 2) throw std::logic_error("Invalid");
 		curSelected.clear();
+		std::vector<int> tmp;
 		if (token[1].substr(0, 5) == "-ISBN")
 		{
-			curSelected = ISBNDatabase->readAll(token[1].substr(6, token[1].length() - 6));
+			tmp = ISBNDatabase->readAll(token[1].substr(6, token[1].length() - 6));
 		}
 		else if (token[1].substr(0, 5) == "-name")
 		{
-			curSelected = nameDatabase->readAll(token[1].substr(7, token[1].length() - 2 - 7 + 1));
+			tmp = nameDatabase->readAll(token[1].substr(7, token[1].length() - 2 - 7 + 1));
 		}
 		else if (token[1].substr(0, 7) == "-author")
 		{
-			curSelected = authorDatabase->readAll(token[1].substr(9, token[1].length() - 2 - 9 + 1));
+			tmp = authorDatabase->readAll(token[1].substr(9, token[1].length() - 2 - 9 + 1));
 		}
 		else if (token[1].substr(0, 8) == "-keyword")
 		{
-			curSelected = keywordDatabase->readAll(token[1].substr(10, token[1].length() - 2 - 10 + 1));
-			for (int i = 0; i < curSelected.size(); i++)
-			{
-				curSelected[i] = ISBNDatabase->read(curSelected[i].ISBN, curSelected[i].ISBN);
-			}
+			tmp = keywordDatabase->readAll(token[1].substr(10, token[1].length() - 2 - 10 + 1));
 		}
+		for (auto t : tmp) curSelected.push_back(mainDatabase->read(t));
 		printSelected();
 	}
 	else if (cmd == "show" && token[1] == "finance")
@@ -224,12 +231,13 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 	else if (cmd == "buy")
 	{
 		if (!(Account->curLevel >= 1)) throw std::logic_error("Invalid");
-		auto t = ISBNDatabase->read(token[1], token[1]);
-		auto backup = t;
+		int num = ISBNDatabase->read(token[1], token[1]);
+		if (num == 0) throw std::logic_error("Invalid");
+		DataType t = mainDatabase->read(num), backup = t;
 		int quantity = stringToInteger(token[2]);
 		if (t.quantity < quantity) throw std::logic_error("Invalid");
 		t.quantity -= quantity;
-		modify(backup, t);
+		modify(backup, t); // to be optimized
 		Finance->addEvent(quantity, t.price * quantity, true);
 	}
 	else throw std::logic_error("Invalid");

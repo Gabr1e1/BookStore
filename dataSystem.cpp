@@ -40,12 +40,13 @@ dataSystem::~dataSystem()
 	dataIO.close();
 }
 
-void dataSystem::printToBack(const std::string &str)
+int dataSystem::printToBack(const std::string &str)
 {
 	dataIO.seekg(0, std::ios::end);
 	auto *t = str.c_str();
 	dataIO.write(t, str.length());
 	if (!dataIO) throw std::logic_error("Write Failed");
+	return (int)dataIO.tellg() - (int)str.length();
 }
 
 std::string dataSystem::read(int address, int len)

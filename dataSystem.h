@@ -22,8 +22,8 @@ protected:
 	dataSystem(const std::string &file);
 	~dataSystem();
 
-protected:
-	void printToBack(const std::string &str);
+public:
+	int printToBack(const std::string &str);
 	std::string read(int address, int len);
 	void write(int address, const std::string &str);
 };
