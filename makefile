@@ -1,7 +1,7 @@
 PROGRAM = Bookstore
 
 CXX = g++
-CXXFLAGS = -std=c++17 -O2
+CXXFLAGS = -std=c++17 -O3
 
 CPP_FILES = $(wildcard *.cpp)
 H_FILES = $(wildcard *.h)
