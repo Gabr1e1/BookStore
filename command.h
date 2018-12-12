@@ -6,6 +6,7 @@
 #include <vector>
 #include <fstream>
 #include <iomanip>
+#include <algorithm>
 
 #include "dataSystem.h"
 #include "account.h"

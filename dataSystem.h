@@ -10,6 +10,7 @@
 #include <stdexcept>
 
 int stringToInteger(const std::string &str);
+unsigned long long stringToLong(const std::string &str);
 double stringToDouble(const std::string &str);
 
 class dataSystem

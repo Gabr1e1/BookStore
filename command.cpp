@@ -63,6 +63,7 @@ void CommandSystem::modify(DataType old, DataType data)
 {
 	erase(old);
 	int address = mainDatabase->printToBack(data.printToString());
+	//std::cerr << "Write: " << address << std::endl;
 
 	ISBNDatabase->write(data.ISBN, data.ISBN, IndexType(data.ISBN, data.ISBN, address).printToString());
 	nameDatabase->write(data.name, data.ISBN, IndexType(data.name, data.ISBN, address).printToString());
@@ -81,11 +82,12 @@ void CommandSystem::modify(DataType old, DataType data)
 
 void CommandSystem::printSelected()
 {
+	std::sort(curSelected.begin(), curSelected.end(), [](class DataType &a, class DataType &b) -> bool { return a.ISBN < b.ISBN;  });
 	for (auto u : curSelected)
 	{
 		std::cout.setf(std::ios::fixed);
 		std::cout << u.ISBN << "\t" << u.name << "\t" << u.author << "\t" << u.keyword << "\t";
-		std::cout << std::setprecision(2) << u.price << "\t" << u.quantity << "æœ¬" << "\n";
+		std::cout << std::setprecision(2) << u.price << "\t" << u.quantity << "±¾" << "\n";
 	}
 }
 
@@ -195,6 +197,7 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 		auto && tmp = ISBNDatabase->readAll("");
 		curSelected.clear();
 		for (auto t : tmp) curSelected.push_back(mainDatabase->read(t));
+		//std::cout << tmp.size() << std::endl;
 		printSelected();
 	}
 	else if (cmd == "show" && token.size() > 1 && token[1] != "finance")
