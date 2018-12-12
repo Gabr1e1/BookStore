@@ -187,8 +187,19 @@ std::vector<int> IndexDatabase::readAll(const std::string &key)
 
 int IndexDatabase::createNewBlock(int size, int next)
 {
-	dataIO.seekg(0, std::ios::end);
-	int ret = (int)dataIO.tellg();
+	int ret;
+	if (!que.empty())
+	{
+		dataIO.seekg(que.front());
+		ret = que.front();
+		que.pop();
+	}
+	else
+	{
+		dataIO.seekg(0, std::ios::end);
+		ret = (int)dataIO.tellg();
+
+	}
 	dataIO.write(reinterpret_cast<char*>(&size), sizeof(size));
 	dataIO.seekg(BlockLen - 2 * sizeof(int), std::ios::cur);
 	dataIO.write(reinterpret_cast<char*>(&next), sizeof(next));
@@ -400,6 +411,7 @@ void IndexDatabase::cleanup()
 
 		if (curSize + nextSize < BlockSize)
 		{
+			que.push(next);
 			int a1 = curAddress + sizeof(int) + curSize * IndexType::IndexTypeLen;
 			int a2 = next + sizeof(int);
 			for (int i = 1; i <= nextSize; i++, a1 += IndexType::IndexTypeLen, a2 += IndexType::IndexTypeLen)

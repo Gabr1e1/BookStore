@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <iomanip>
 #include <cassert>
+#include <queue>
 
 #include "dataSystem.h"
 
@@ -38,12 +39,13 @@ public:
 class IndexDatabase
 {
 public:
-	static const int BlockSize = 100;
+	static const int BlockSize = 300;
 	static const int BlockLen = sizeof(int) * 2 + BlockSize * IndexType::IndexTypeLen;
 
 private:
 	std::fstream dataIO;
 	int startAddress;
+	std::queue<int> que;
 
 public:
 	IndexDatabase(const std::string &file);
