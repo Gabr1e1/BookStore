@@ -42,6 +42,14 @@ std::vector<std::string> CommandSystem::parse(const std::string &str)
 	return ret;
 }
 
+void CommandSystem::cleanup()
+{
+	ISBNDatabase->cleanup();
+	nameDatabase->cleanup();
+	authorDatabase->cleanup();
+	keywordDatabase->cleanup();
+}
+
 void CommandSystem::erase(DataType data)
 {
 	ISBNDatabase->erase(data.ISBN, data.ISBN);
@@ -78,6 +86,8 @@ void CommandSystem::modify(DataType old, DataType data)
 	}
 	data.keyword = keyword;
 	keywordDatabase->write(data.keyword, data.ISBN, IndexType(data.keyword, data.ISBN, address).printToString());
+
+	cleanup();
 }
 
 void CommandSystem::printSelected()
@@ -89,14 +99,6 @@ void CommandSystem::printSelected()
 		std::cout << u.ISBN << "\t" << u.name << "\t" << u.author << "\t" << u.keyword << "\t";
 		std::cout << std::setprecision(2) << u.price << "\t" << u.quantity << "±¾" << "\n";
 	}
-}
-
-void CommandSystem::cleanup()
-{
-	ISBNDatabase->cleanup();
-	nameDatabase->cleanup();
-	authorDatabase->cleanup();
-	keywordDatabase->cleanup();
 }
 
 ResultType CommandSystem::userCommand(std::vector<std::string> token)
@@ -197,7 +199,6 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 		auto && tmp = ISBNDatabase->readAll("");
 		curSelected.clear();
 		for (auto t : tmp) curSelected.push_back(mainDatabase->read(t));
-		//std::cout << tmp.size() << std::endl;
 		printSelected();
 	}
 	else if (cmd == "show" && token.size() > 1 && token[1] != "finance")
@@ -244,7 +245,6 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 		Finance->addEvent(quantity, t.price * quantity, true);
 	}
 	else throw std::logic_error("Invalid");
-	cleanup();
 	return Executed;
 }
 
