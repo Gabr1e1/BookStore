@@ -56,6 +56,7 @@ private:
 	void writeBlock(int address, const std::string &str);
 
 	bool inCurBlock(const std::string &key, const std::string &uniqueKey, int curSize);
+	int readAndCmpString(int address, int len, const std::string &str);
 	std::vector<int> readInsideBlock(const std::string &key, int address, int size, const std::string &uniqueKey = "");
 	
 	void eraseInsideBlock(const std::string &key, int address, int size, const std::string &uniqueKey);

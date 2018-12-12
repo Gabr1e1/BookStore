@@ -11,8 +11,9 @@ IndexType::IndexType(const std::string &str)
 {
 	key = formatSubstr(str, 0, StringLen);
 	ISBN = formatSubstr(str, StringLen, ISBNLen);
-	const char* a = str.c_str();
-	corresAddress = *reinterpret_cast<const int*>(a + StringLen + ISBNLen);
+	char a[4] = {0};
+	for (int i = 0; i < 4; i++) a[i] = str[str.length() - 4 + i];
+	corresAddress = *reinterpret_cast<int*>(a);
 }
 
 IndexType::IndexType(const std::string &str, const std::string &_ISBN, int address) 
@@ -27,7 +28,6 @@ std::string IndexType::printToString()
 	ret.setf(std::ios::left);
 	ret << std::setw(StringLen) << key;
 	ret << std::setw(ISBNLen) << ISBN;
-
 	std::string retstr = ret.str();
 	for (size_t i = 0; i < sizeof(corresAddress); i++)
 		retstr += *(reinterpret_cast<char*>(&corresAddress) + i);
@@ -77,24 +77,33 @@ std::string IndexDatabase::readWholeBlock(int address)
 
 std::string IndexDatabase::readString(int address, int len) // len : maxminum read length
 {
-	char *t = new char[len + 1];
-	for (int i = 0; i < len + 1; i++) t[i] = 0;
+	char t[IndexType::IndexTypeLen + 1] = { 0 };
 	dataIO.seekg(address);
 	dataIO.read(t, len);
 	std::string ret = "";
 	for (int i = 0; i < len; i++) ret += t[i];
 	while (ret.length() != 0 && (ret[ret.length() - 1] == ' ' || ret[ret.length() - 1] == 0)) ret.pop_back();
-	delete[] t;
 	return ret;
+}
+
+int IndexDatabase::readAndCmpString(int address, int len, const std::string &str)
+{
+	dataIO.seekg(address);
+	char t;
+	for (int i = 0; i < str.length(); i++)
+	{
+		dataIO.read((&t), sizeof(t));
+		if (t != str[i]) return t < str[i];
+	}
+	return 2;
 }
 
 int IndexDatabase::readAddress(int address)
 {
-	char *t = new char[IndexType::NumLen];
+	char t[IndexType::NumLen] = {0};
 	dataIO.seekg(address + IndexType::StringLen + IndexType ::ISBNLen);
 	dataIO.read(t, IndexType::NumLen);
 	int ret = *(reinterpret_cast<int*>(t));
-	delete[] t;
 	return ret;
 }
 
@@ -114,6 +123,15 @@ bool IndexDatabase::inCurBlock(const std::string &key, const std::string &unique
 	std::string &&strEnd2 = (uniqueKey != "") ? readString(curAddress + (curSize - 1) * IndexType::IndexTypeLen + IndexType::StringLen, IndexType::ISBNLen) : "";
 	return (make_pair(key, uniqueKey) >= make_pair(strBegin, strBegin2))
 		&& (make_pair(key, uniqueKey) <= make_pair(strEnd, strEnd2));
+
+	/*if (curSize == 0) return false;
+	int curAddress = (int)dataIO.tellg();
+	int r1 = readAndCmpString(curAddress, IndexType::StringLen, key);
+	if (r1 == 2) r1 = readAndCmpString(curAddress + IndexType::StringLen, IndexType::ISBNLen, uniqueKey);
+	int r2 = readAndCmpString(curAddress + (curSize - 1) * IndexType::IndexTypeLen, IndexType::StringLen, key);
+	if (r2 == 2) r2 = readAndCmpString(curAddress + (curSize - 1) * IndexType::IndexTypeLen + IndexType::StringLen, IndexType::ISBNLen, uniqueKey);
+	if ((r1 == 1 || r1 == 2) && (r2 == 0 || r2 == 2)) return true;
+	return false;*/
 }
 
 std::vector<int> IndexDatabase::readInsideBlock(const std::string &key, int address, int size, const std::string &uniqueKey)
@@ -121,9 +139,10 @@ std::vector<int> IndexDatabase::readInsideBlock(const std::string &key, int addr
 	std::vector<int> ret;
 	for (int i = 1; i <= size; i++)
 	{
-		std::string &&cur = readString(address, IndexType::StringLen);
-		std::string &&curKey = readString(address + IndexType::StringLen, IndexType::ISBNLen);
-		if ((key == "" || cur == key) && (uniqueKey == "" || curKey == uniqueKey)) ret.push_back(readAddress(address));
+		int r1 = (key != "") ? readAndCmpString(address, IndexType::StringLen, key) : 2;
+		int r2 = (uniqueKey != "") ? readAndCmpString(address + IndexType::StringLen, IndexType::ISBNLen, uniqueKey) : 2;
+
+		if (r1 == 2 && r2 == 2) ret.push_back(readAddress(address));
 		address += IndexType::IndexTypeLen;
 	}
 	return ret;
@@ -169,7 +188,7 @@ std::vector<int> IndexDatabase::readAll(const std::string &key)
 		if (inCurBlock(key, "", curSize) || key == "")
 		{
 			flg = true;
-			auto t = readInsideBlock(key, curAddress + sizeof(int), curSize);
+			auto &&t = readInsideBlock(key, curAddress + sizeof(int), curSize);
 			ret.insert(ret.end(), t.begin(), t.end());
 		}
 		else
@@ -240,16 +259,16 @@ void IndexDatabase::writeInsideBlock(const std::string &key, int address, int si
 
 	for (int i = 1; i <= size; i++)
 	{
-		std::string &&curKey = readString(address, IndexType::StringLen);
-		std::string &&curUniqueKey = readString(address + IndexType::StringLen, IndexType::ISBNLen);
-		if (curKey == key && curUniqueKey == uniqueKey)
+		int r1 = readAndCmpString(address, IndexType::StringLen, key);
+		int r2 = readAndCmpString(address + IndexType::StringLen, IndexType::ISBNLen, uniqueKey);
+		if (r1 == 2 && r2 == 2)
 		{
 			dataIO.seekg(address);
 			dataIO << value;
 			return;
 		}
 		//std::cout << curKey << " " << cur << " " << key << " " << uniqueKey << std::endl;
-		if (make_pair(curKey, curUniqueKey) < make_pair(key, uniqueKey)) pre = i;
+		if (r1 == 1 || (r1 == 2 && r2 == 1)) pre = i;
 		else break; //break if the current key > key
 		address += IndexType::IndexTypeLen;
 	}
