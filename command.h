@@ -41,13 +41,14 @@ public:
 private:
 	std::vector<std::string> parse(const std::string &str);
 	void erase(DataType data);
+	bool check(const DataType &d, const DataType &req);
 	void modify(DataType old, DataType data);
 	void cleanup();
 
 private:
 	ResultType userCommand(std::vector<std::string> token);
 	ResultType dataCommand(std::vector<std::string> token);
-	void printSelected();
+	void printSelected(const DataType &req);
 
 public:
 	ResultType runCommand(const std::string &str);

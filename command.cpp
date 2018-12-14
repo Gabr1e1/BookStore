@@ -71,7 +71,6 @@ void CommandSystem::modify(DataType old, DataType data)
 {
 	erase(old);
 	int address = mainDatabase->printToBack(data.printToString());
-	//std::cerr << "Write: " << address << std::endl;
 
 	ISBNDatabase->write(data.ISBN, data.ISBN, IndexType(data.ISBN, data.ISBN, address).printToString());
 	nameDatabase->write(data.name, data.ISBN, IndexType(data.name, data.ISBN, address).printToString());
@@ -90,11 +89,21 @@ void CommandSystem::modify(DataType old, DataType data)
 	cleanup();
 }
 
-void CommandSystem::printSelected()
+bool CommandSystem::check(const DataType &d, const DataType &req)
+{
+	if (req.ISBN != "" && d.ISBN != req.ISBN) return false;
+	if (req.name != "" && d.name != req.name) return false;
+	if (req.author != "" && d.author != req.author) return false;
+	if (req.keyword != "" && d.keyword.find(req.keyword) != std::string::npos) return false;
+	return true;
+}
+
+void CommandSystem::printSelected(const DataType &req)
 {
 	std::sort(curSelected.begin(), curSelected.end(), [](class DataType &a, class DataType &b) -> bool { return a.ISBN < b.ISBN;  });
 	for (auto u : curSelected)
 	{
+		if (!check(u, req)) continue;
 		std::cout.setf(std::ios::fixed);
 		std::cout << u.ISBN << "\t" << u.name << "\t" << u.author << "\t" << u.keyword << "\t";
 		std::cout << std::setprecision(2) << u.price << "\t" << u.quantity << "本" << "\n";
@@ -190,7 +199,7 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 		if (curSelected.size() != 1) throw std::logic_error("Invalid");
 		DataType &t = curSelected[0], backup = curSelected[0];
 		t.quantity += stringToInteger(token[1]);
-		modify(backup, t); //to be optimized
+		modify(backup, t);
 		Finance->addEvent(stringToInteger(token[1]), stringToDouble(token[2]), false);
 	}
 	else if (cmd == "show" && token.size() == 1)
@@ -199,7 +208,7 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 		auto && tmp = ISBNDatabase->readAll("");
 		curSelected.clear();
 		for (auto t : tmp) curSelected.push_back(mainDatabase->read(t));
-		printSelected();
+		printSelected(DataType());
 	}
 	else if (cmd == "show" && token.size() > 1 && token[1] != "finance")
 	{
@@ -207,24 +216,29 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 		if (token.size() != 2) throw std::logic_error("Invalid");
 		curSelected.clear();
 		std::vector<int> tmp;
+		DataType req = DataType();
 		if (token[1].substr(0, 5) == "-ISBN")
 		{
 			tmp = ISBNDatabase->readAll(token[1].substr(6, token[1].length() - 6));
+			req.ISBN = token[1].substr(6, token[1].length() - 6);
 		}
 		else if (token[1].substr(0, 5) == "-name")
 		{
 			tmp = nameDatabase->readAll(token[1].substr(7, token[1].length() - 2 - 7 + 1));
+			req.name = token[1].substr(7, token[1].length() - 2 - 7 + 1);
 		}
 		else if (token[1].substr(0, 7) == "-author")
 		{
 			tmp = authorDatabase->readAll(token[1].substr(9, token[1].length() - 2 - 9 + 1));
+			req.author = token[1].substr(9, token[1].length() - 2 - 9 + 1);
 		}
 		else if (token[1].substr(0, 8) == "-keyword")
 		{
 			tmp = keywordDatabase->readAll(token[1].substr(10, token[1].length() - 2 - 10 + 1));
+			req.keyword = token[1].substr(10, token[1].length() - 2 - 10 + 1);
 		}
 		for (auto t : tmp) curSelected.push_back(mainDatabase->read(t));
-		printSelected();
+		printSelected(req);
 	}
 	else if (cmd == "show" && token[1] == "finance")
 	{
@@ -241,7 +255,7 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 		int quantity = stringToInteger(token[2]);
 		if (t.quantity < quantity) throw std::logic_error("Invalid");
 		t.quantity -= quantity;
-		modify(backup, t); // to be optimized
+		modify(backup, t);
 		Finance->addEvent(quantity, t.price * quantity, true);
 	}
 	else throw std::logic_error("Invalid");
@@ -251,15 +265,12 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 ResultType CommandSystem::runCommand(const std::string &str)
 {
 	auto token = parse(str);
-
 	std::string cmd = token[0];
 
 	if (cmd == "exit") return Exit;
 	if (cmd == "load") return runLoadCommand(token[1]);
-
 	if (cmd == "su" || cmd == "logout" || cmd == "useradd" || cmd == "register" || cmd == "delete" || cmd == "passwd")
 		return userCommand(token);
-
 	if (cmd == "select" || cmd == "modify" || cmd == "import" || cmd == "show" || cmd == "buy")
 		return dataCommand(token);
 
