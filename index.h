@@ -48,7 +48,7 @@ class MainDatabase;
 class IndexDatabase
 {
 public:
-	static const int BlockSize = 500;
+	static const int BlockSize = 900;
 	static const int BlockLen = sizeof(int) * 2 + BlockSize * IndexType::IndexTypeLen;
 
 private:
