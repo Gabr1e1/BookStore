@@ -106,7 +106,7 @@ void CommandSystem::printSelected(const DataType &req)
 		if (!check(u, req)) continue;
 		std::cout.setf(std::ios::fixed);
 		std::cout << u.ISBN << "\t" << u.name << "\t" << u.author << "\t" << u.keyword << "\t";
-		std::cout << std::setprecision(2) << u.price << "\t" << u.quantity << "±¾" << "\n";
+		std::cout << std::setprecision(2) << u.price << "\t" << u.quantity << "æœ¬" << "\n";
 	}
 }
 
