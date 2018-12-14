@@ -6,10 +6,10 @@ CommandSystem::CommandSystem(const std::string &file) : dataSystem(file)
 	Account = new AccountSystem("AccountSystem.txt");
 	Finance = new FinanceSystem("FinanceSystem.txt");
 	mainDatabase = new MainDatabase("Maindatabase.txt");
-	ISBNDatabase = new IndexDatabase("ISBNDatabase.txt");
-	nameDatabase = new IndexDatabase("nameDatabase.txt");
-	authorDatabase = new IndexDatabase("authorDatabase.txt");
-	keywordDatabase = new IndexDatabase("keywordDatabase.txt");
+	ISBNDatabase = new IndexDatabase("ISBNDatabase.txt", mainDatabase);
+	nameDatabase = new IndexDatabase("nameDatabase.txt", mainDatabase);
+	authorDatabase = new IndexDatabase("authorDatabase.txt", mainDatabase);
+	keywordDatabase = new IndexDatabase("keywordDatabase.txt", mainDatabase);
 }
 
 CommandSystem::~CommandSystem()
@@ -94,7 +94,7 @@ bool CommandSystem::check(const DataType &d, const DataType &req)
 	if (req.ISBN != "" && d.ISBN != req.ISBN) return false;
 	if (req.name != "" && d.name != req.name) return false;
 	if (req.author != "" && d.author != req.author) return false;
-	if (req.keyword != "" && d.keyword.find(req.keyword) != std::string::npos) return false;
+	if (req.keyword != "" && d.keyword.find(req.keyword) == std::string::npos) return false;
 	return true;
 }
 
@@ -106,7 +106,7 @@ void CommandSystem::printSelected(const DataType &req)
 		if (!check(u, req)) continue;
 		std::cout.setf(std::ios::fixed);
 		std::cout << u.ISBN << "\t" << u.name << "\t" << u.author << "\t" << u.keyword << "\t";
-		std::cout << std::setprecision(2) << u.price << "\t" << u.quantity << "æœ¬" << "\n";
+		std::cout << std::setprecision(2) << u.price << "\t" << u.quantity << "±¾" << "\n";
 	}
 }
 

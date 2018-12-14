@@ -12,6 +12,7 @@
 #include <queue>
 
 #include "dataSystem.h"
+#include "maindb.h"
 
 typedef unsigned long long ull;
 
@@ -42,19 +43,22 @@ public:
 	std::string printToString();
 };
 
+class MainDatabase;
+
 class IndexDatabase
 {
 public:
-	static const int BlockSize = 800;
+	static const int BlockSize = 500;
 	static const int BlockLen = sizeof(int) * 2 + BlockSize * IndexType::IndexTypeLen;
 
 private:
 	std::fstream dataIO;
 	int startAddress;
 	std::queue<int> que;
+	MainDatabase *maindb;
 
 public:
-	IndexDatabase(const std::string &file);
+	IndexDatabase(const std::string &file, MainDatabase *_db);
 	~IndexDatabase();
 
 private:
@@ -69,10 +73,10 @@ private:
 	void writeBlock(int address, const std::string &str);
 
 	bool inCurBlock(ull key, ull uniqueKey, int curSize);
-	std::vector<int> readInsideBlock(ull key, int address, int size, ull uniqueKey = 0);
+	std::vector<int> readInsideBlock(ull key, int address, int size, ull uniqueKey = 0, const std::string &uniqueStr = "");
 	
-	void eraseInsideBlock(ull key, int address, int size, ull uniqueKey);
-	void writeInsideBlock(ull key, int address, int size, ull uniqueKey, const std::string &value = "");
+	void eraseInsideBlock(ull key, int address, int size, ull uniqueKey, const std::string &uniqueStr);
+	void writeInsideBlock(ull key, int address, int size, ull uniqueKey, const std::string &value = "", const std::string &uniqueStr = "");
 	int split(int start, int beginEle, int size);
 	int createNewBlock(int size = 0, int next = -1); //create a new block without filling the elements
 
