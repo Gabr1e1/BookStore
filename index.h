@@ -13,19 +13,24 @@
 
 #include "dataSystem.h"
 
+typedef unsigned long long ull;
+
+const ull B = 9;
+
 std::string formatSubstr(const std::string &str, int start, int len);
+ull getHash(const std::string &str);
 
 class IndexType
 {
 public:
-	static const int StringLen = 40;
-	static const int ISBNLen = sizeof(unsigned long long);
+	static const int StringLen = sizeof(ull);
+	static const int ISBNLen = sizeof(ull);
 	static const int NumLen = sizeof(int);
 	static const int IndexTypeLen = StringLen + ISBNLen + NumLen;
 
 public:
-	std::string key;  //aligned to 40 characters
-	unsigned long long ISBN;
+	ull key;
+	ull ISBN;
 	int corresAddress;
 
 public:
@@ -54,25 +59,28 @@ public:
 
 private:
 	std::string readWholeBlock(int address);
-	std::string readString(int address, int len);
+	template<typename T>
+	T readNum(int address);
+
 	int readAddress(int address);
-	unsigned long long readISBN(int address);
+	ull readISBN(int address);
+	ull readKey(int address);
 
 	void writeBlock(int address, const std::string &str);
 
-	bool inCurBlock(const std::string &key, unsigned long long uniqueKey, int curSize);
-	std::vector<int> readInsideBlock(const std::string &key, int address, int size, unsigned long long uniqueKey = 0);
+	bool inCurBlock(ull key, ull uniqueKey, int curSize);
+	std::vector<int> readInsideBlock(ull key, int address, int size, ull uniqueKey = 0);
 	
-	void eraseInsideBlock(const std::string &key, int address, int size, unsigned long long uniqueKey);
-	void writeInsideBlock(const std::string &key, int address, int size, unsigned long long uniqueKey, const std::string &value = "");
+	void eraseInsideBlock(ull key, int address, int size, ull uniqueKey);
+	void writeInsideBlock(ull key, int address, int size, ull uniqueKey, const std::string &value = "");
 	int split(int start, int beginEle, int size);
 	int createNewBlock(int size = 0, int next = -1); //create a new block without filling the elements
 
 public:
-	int read(const std::string &key, const std::string &_uniqueKey);
-	std::vector<int> readAll(const std::string &key);
-	void write(const std::string &key, const std::string &_uniqueKey, const std::string &data);
-	void erase(const std::string &key, const std::string &_uniqueKey);
+	int read(const std::string &_key, const std::string &_uniqueKey);
+	std::vector<int> readAll(const std::string &_key);
+	void write(const std::string &_key, const std::string &_uniqueKey, const std::string &data);
+	void erase(const std::string &_key, const std::string &_uniqueKey);
 	void cleanup();
 };
 

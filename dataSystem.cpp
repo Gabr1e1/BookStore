@@ -8,14 +8,6 @@ int stringToInteger(const std::string &str)
 	return value;
 }
 
-unsigned long long stringToLong(const std::string &str)
-{
-	std::istringstream stream(str);
-	unsigned long long value = 0;
-	stream >> value;
-	return value;
-}
-
 double stringToDouble(const std::string &str)
 {
 	std::istringstream stream(str);

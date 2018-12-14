@@ -7,27 +7,32 @@ std::string formatSubstr(const std::string &str, int start, int len)
 	return ret;
 }
 
+ull getHash(const std::string &str)
+{
+	ull ret = 0;
+	for (int i = 0; i < str.length(); i++) ret = ret * B + str[i];
+	return ret;
+}
+
 IndexType::IndexType(const std::string &str)
 {
 	const char* a = str.c_str();
-	key = formatSubstr(str, 0, StringLen);
-	ISBN = *reinterpret_cast<const unsigned long long*>(a + StringLen);
+	key = *reinterpret_cast<const ull*>(a);
+	ISBN = *reinterpret_cast<const ull*>(a + StringLen);
 	corresAddress = *reinterpret_cast<const int*>(a + StringLen + ISBNLen);
 }
 
 IndexType::IndexType(const std::string &str, const std::string &_ISBN, int address) 
-					: key(str), ISBN(stringToLong(_ISBN)), corresAddress(address)
+					: key(getHash(str)), ISBN(getHash(_ISBN)), corresAddress(address)
 {
 	/* Empy */
 }
 	
 std::string IndexType::printToString()
 {
-	std::ostringstream ret;
-	ret.setf(std::ios::left);
-	ret << std::setw(StringLen) << key;
-
-	std::string retstr = ret.str();
+	std::string retstr = "";
+	for (size_t i = 0; i < sizeof(key); i++)
+		retstr += *(reinterpret_cast<char*>(&key) + i);
 	for (size_t i = 0; i < sizeof(ISBN); i++)
 		retstr += *(reinterpret_cast<char*>(&ISBN) + i);
 	for (size_t i = 0; i < sizeof(corresAddress); i++)
@@ -66,8 +71,7 @@ IndexDatabase::~IndexDatabase()
 
 std::string IndexDatabase::readWholeBlock(int address)
 {
-	char *t = new char[IndexType::IndexTypeLen + 1];
-	for (int i = 0; i < IndexType::IndexTypeLen + 1; i++) t[i] = 0;
+	char *t = new char[IndexType::IndexTypeLen];
 	dataIO.seekg(address);
 	dataIO.read(t, IndexType::IndexTypeLen);
 	std::string ret = "";
@@ -76,37 +80,30 @@ std::string IndexDatabase::readWholeBlock(int address)
 	return ret;
 }
 
-std::string IndexDatabase::readString(int address, int len) // len : maxminum read length
+template<typename T>
+T IndexDatabase::readNum(int address)
 {
-	char *t = new char[len + 1];
-	for (int i = 0; i < len + 1; i++) t[i] = 0;
+	char *t = new char[sizeof(T)];
 	dataIO.seekg(address);
-	dataIO.read(t, len);
-	std::string ret = "";
-	for (int i = 0; i < len; i++) ret += t[i];
-	while (ret.length() != 0 && (ret[ret.length() - 1] == ' ' || ret[ret.length() - 1] == 0)) ret.pop_back();
+	dataIO.read(t, sizeof(T));
+	T ret = *(reinterpret_cast<T*>(t));
 	delete[] t;
 	return ret;
 }
 
 int IndexDatabase::readAddress(int address)
 {
-	char *t = new char[IndexType::NumLen];
-	dataIO.seekg(address + IndexType::StringLen + IndexType ::ISBNLen);
-	dataIO.read(t, IndexType::NumLen);
-	int ret = *(reinterpret_cast<int*>(t));
-	delete[] t;
-	return ret;
+	return readNum<int>(address + IndexType::StringLen + IndexType::ISBNLen);
 }
 
-unsigned long long IndexDatabase::readISBN(int address)
+ull IndexDatabase::readISBN(int address)
 {
-	char *t = new char[IndexType::ISBNLen];
-	dataIO.seekg(address);
-	dataIO.read(t, IndexType::ISBNLen);
-	unsigned long long ret = *(reinterpret_cast<unsigned long long*>(t));
-	delete[] t;
-	return ret;
+	return readNum<ull>(address);
+}
+
+ull IndexDatabase::readKey(int address)
+{
+	return readNum<ull>(address);
 }
 
 void IndexDatabase::writeBlock(int address, const std::string &str)
@@ -115,34 +112,35 @@ void IndexDatabase::writeBlock(int address, const std::string &str)
 	dataIO << str;
 }
 
-bool IndexDatabase::inCurBlock(const std::string &key, unsigned long long uniqueKey, int curSize)
+bool IndexDatabase::inCurBlock(ull key, ull uniqueKey, int curSize)
 {
 	if (curSize == 0) return false;
 	int curAddress = (int)dataIO.tellg();
-	auto &&strBegin = readString(curAddress, IndexType::StringLen);
-	unsigned long long strBegin2 = (uniqueKey != 0) ? readISBN(curAddress + IndexType::StringLen) : 0;
-	auto &&strEnd = readString(curAddress + (curSize - 1) * IndexType::IndexTypeLen, IndexType::StringLen);
-	unsigned long long strEnd2 = (uniqueKey != 0) ? readISBN(curAddress + (curSize - 1) * IndexType::IndexTypeLen + IndexType::StringLen) : 0;
-	return (make_pair(key, uniqueKey) >= make_pair(strBegin, strBegin2))
-		&& (make_pair(key, uniqueKey) <= make_pair(strEnd, strEnd2));
+	ull strBegin = readKey(curAddress);
+	ull strBegin2 = (uniqueKey != 0) ? readISBN(curAddress + IndexType::StringLen) : 0;
+	ull strEnd = readKey(curAddress + (curSize - 1) * IndexType::IndexTypeLen);
+	ull strEnd2 = (uniqueKey != 0) ? readISBN(curAddress + (curSize - 1) * IndexType::IndexTypeLen + IndexType::StringLen) : 0;
+	return (std::make_pair(key, uniqueKey) >= std::make_pair(strBegin, strBegin2))
+		&& (std::make_pair(key, uniqueKey) <= std::make_pair(strEnd, strEnd2));
 }
 
-std::vector<int> IndexDatabase::readInsideBlock(const std::string &key, int address, int size, unsigned long long uniqueKey)
+std::vector<int> IndexDatabase::readInsideBlock(ull key, int address, int size, ull uniqueKey)
 {
 	std::vector<int> ret;
 	for (int i = 1; i <= size; i++)
 	{
-		std::string &&cur = readString(address, IndexType::StringLen);
+		ull cur = readKey(address);
 		auto curKey = readISBN(address + IndexType::StringLen);
-		if ((key == "" || cur == key) && (uniqueKey == 0 || curKey == uniqueKey)) ret.push_back(readAddress(address));
+		if ((key == 0 || cur == key) && (uniqueKey == 0 || curKey == uniqueKey)) ret.push_back(readAddress(address));
 		address += IndexType::IndexTypeLen;
 	}
 	return ret;
 }
 
-int IndexDatabase::read(const std::string &key, const std::string &_uniqueKey)
+int IndexDatabase::read(const std::string &_key, const std::string &_uniqueKey)
 {
-	unsigned long long uniqueKey = stringToLong(_uniqueKey);
+	ull key = getHash(_key);
+	ull uniqueKey = getHash(_uniqueKey);
 	int curAddress = startAddress;
 	while (true)
 	{
@@ -167,8 +165,9 @@ int IndexDatabase::read(const std::string &key, const std::string &_uniqueKey)
 	return 0;
 }
 
-std::vector<int> IndexDatabase::readAll(const std::string &key)
+std::vector<int> IndexDatabase::readAll(const std::string &_key)
 {
+	ull key = getHash(_key);
 	int curAddress = startAddress;
 	std::vector<int> ret = {};
 	bool flg = false;
@@ -178,7 +177,7 @@ std::vector<int> IndexDatabase::readAll(const std::string &key)
 		int curSize;
 		dataIO.read(reinterpret_cast<char*>(&curSize), sizeof(curSize));
 
-		if (inCurBlock(key, 0, curSize) || key == "")
+		if (inCurBlock(key, 0, curSize) || key == 0)
 		{
 			flg = true;
 			auto t = readInsideBlock(key, curAddress + sizeof(int), curSize);
@@ -186,7 +185,7 @@ std::vector<int> IndexDatabase::readAll(const std::string &key)
 		}
 		else
 		{
-			if (flg && key != "" && curSize != 0) break;
+			if (flg && key != 0 && curSize != 0) break;
 		}
 		dataIO.seekg(curAddress + BlockLen - sizeof(int));
 		int next;
@@ -247,8 +246,8 @@ int IndexDatabase::split(int start, int beginEle, int size)
 	return t2;
 }
 
-void IndexDatabase::writeInsideBlock(const std::string &key, int address, int size,
-	unsigned long long uniqueKey, const std::string &value)
+void IndexDatabase::writeInsideBlock(ull key, int address, int size,
+	ull uniqueKey, const std::string &value)
 {
 	int pre = 0;
 	int start = address;
@@ -263,8 +262,8 @@ void IndexDatabase::writeInsideBlock(const std::string &key, int address, int si
 
 	for (int i = 1; i <= size; i++)
 	{
-		std::string &&curKey = readString(address, IndexType::StringLen);
-		unsigned long long curUniqueKey = readISBN(address + IndexType::StringLen);
+		ull curKey = readKey(address);
+		ull curUniqueKey = readISBN(address + IndexType::StringLen);
 		if (curKey == key && curUniqueKey == uniqueKey)
 		{
 			dataIO.seekg(address);
@@ -272,7 +271,7 @@ void IndexDatabase::writeInsideBlock(const std::string &key, int address, int si
 			return;
 		}
 		//std::cout << curKey << " " << cur << " " << key << " " << uniqueKey << std::endl;
-		if (make_pair(curKey, curUniqueKey) < make_pair(key, uniqueKey)) pre = i;
+		if (std::make_pair(curKey, curUniqueKey) < std::make_pair(key, uniqueKey)) pre = i;
 		else break; //break if the current key > key
 		address += IndexType::IndexTypeLen;
 	}
@@ -300,9 +299,10 @@ void IndexDatabase::writeInsideBlock(const std::string &key, int address, int si
 	writeBlock(newBlock + sizeof(int), value);
 }
 
-void IndexDatabase::write(const std::string &key, const std::string &_uniqueKey, const std::string &data)
+void IndexDatabase::write(const std::string &_key, const std::string &_uniqueKey, const std::string &data)
 {
-	unsigned long long uniqueKey = stringToLong(_uniqueKey);
+	ull key = getHash(_key);
+	ull uniqueKey = getHash(_uniqueKey);
 	int curAddress = startAddress;
 	int pre = -1;
 
@@ -321,9 +321,9 @@ void IndexDatabase::write(const std::string &key, const std::string &_uniqueKey,
 		{
 			if (curSize >= 1)
 			{
-				std::string &&strEnd = readString(curAddress + sizeof(int) + (curSize - 1) * IndexType::IndexTypeLen, IndexType::StringLen);
-				unsigned long long strEnd2 = readISBN(curAddress + sizeof(int) + (curSize - 1) * IndexType::IndexTypeLen + IndexType::StringLen);
-				if (make_pair(strEnd, strEnd2) < make_pair(key, uniqueKey)) pre = curAddress;
+				ull strEnd = readKey(curAddress + sizeof(int) + (curSize - 1) * IndexType::IndexTypeLen);
+				ull strEnd2 = readISBN(curAddress + sizeof(int) + (curSize - 1) * IndexType::IndexTypeLen + IndexType::StringLen);
+				if (std::make_pair(strEnd, strEnd2) < std::make_pair(key, uniqueKey)) pre = curAddress;
 			}
 			dataIO.seekg(curAddress + BlockLen - sizeof(int));
 			int next;
@@ -351,13 +351,13 @@ void IndexDatabase::write(const std::string &key, const std::string &_uniqueKey,
 	writeBlock(t + sizeof(int), data); //write data to the new block
 }
 
-void IndexDatabase::eraseInsideBlock(const std::string &key, int address, int size, unsigned long long uniqueKey)
+void IndexDatabase::eraseInsideBlock(ull key, int address, int size, ull uniqueKey)
 {
 	int pre = 0;
 	int start = address;
 	for (int i = 1; i <= size; i++)
 	{
-		std::string &&curKey = readString(address, IndexType::StringLen);
+		ull curKey = readKey(address);
 		auto curUniqueKey = readISBN(address + IndexType::StringLen);
 		if (curUniqueKey == uniqueKey && curKey == key)
 		{
@@ -376,9 +376,10 @@ void IndexDatabase::eraseInsideBlock(const std::string &key, int address, int si
 	}
 }
 
-void IndexDatabase::erase(const std::string &key, const std::string &_uniqueKey)
+void IndexDatabase::erase(const std::string &_key, const std::string &_uniqueKey)
 {
-	unsigned long long uniqueKey = stringToLong(_uniqueKey);
+	ull key = getHash(_key);
+	ull uniqueKey = getHash(_uniqueKey);
 	int curAddress = startAddress;
 	while (true)
 	{
