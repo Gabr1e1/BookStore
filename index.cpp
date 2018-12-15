@@ -123,7 +123,7 @@ bool IndexDatabase::inCurBlock(ull key, ull uniqueKey, int curSize)
 {
 	if (curSize == 0) return false;
 	int curAddress = (int)dataIO.tellg();
-	ull strBegin = readKey(curAddress, false);
+	ull strBegin = readKey(curAddress);
 	ull strBegin2 = (uniqueKey != 0) ? readISBN(curAddress + IndexType::StringLen, false) : 0;
 	ull strEnd = readKey(curAddress + (curSize - 1) * IndexType::IndexTypeLen);
 	ull strEnd2 = (uniqueKey != 0) ? readISBN(curAddress + (curSize - 1) * IndexType::IndexTypeLen + IndexType::StringLen, false) : 0;
@@ -136,10 +136,9 @@ std::vector<int> IndexDatabase::readInsideBlock(ull key, int address, int size, 
 	std::vector<int> ret;
 	for (int i = 1; i <= size; i++)
 	{
-		ull cur = readKey(address, false);
+		ull cur = readKey(address, true);
 		auto curKey = readISBN(address + IndexType::StringLen, false);
 		if ((key == 0 || cur == key) && (uniqueKey == 0 || (curKey == uniqueKey && maindb->read(readAddress(address)).ISBN == uniqueStr))) ret.push_back(readAddress(address));
-		readAddress(address, false);
 		address += IndexType::IndexTypeLen;
 	}
 	return ret;
@@ -280,9 +279,8 @@ void IndexDatabase::writeInsideBlock(ull key, int address, int size,
 
 	if (size + 1 < BlockSize)
 	{
-		int tAdd = start + IndexType::IndexTypeLen * (size - 1);
 		copyBlocks(start + IndexType::IndexTypeLen * pre, start + IndexType::IndexTypeLen * (pre + 1), size - pre);
-		writeBlock(tAdd + IndexType::IndexTypeLen, value);
+		writeBlock(start + IndexType::IndexTypeLen * pre, value);
 		size++;
 		dataIO.seekg(start - sizeof(int));
 		dataIO.write(reinterpret_cast<char*>(&size), sizeof(size));
