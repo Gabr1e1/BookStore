@@ -91,17 +91,17 @@ T IndexDatabase::readNum(int address, bool reSeek)
 
 int IndexDatabase::readAddress(int address, bool reSeek)
 {
-	return readNum<int>(address + IndexType::StringLen + IndexType::ISBNLen);
+	return readNum<int>(address + IndexType::StringLen + IndexType::ISBNLen, reSeek);
 }
 
 ull IndexDatabase::readISBN(int address, bool reSeek)
 {
-	return readNum<ull>(address);
+	return readNum<ull>(address, reSeek);
 }
 
 ull IndexDatabase::readKey(int address, bool reSeek)
 {
-	return readNum<ull>(address);
+	return readNum<ull>(address, reSeek);
 }
 
 void IndexDatabase::writeBlock(int address, const std::string &str, bool reSeek)
@@ -281,10 +281,7 @@ void IndexDatabase::writeInsideBlock(ull key, int address, int size,
 	if (size + 1 < BlockSize)
 	{
 		int tAdd = start + IndexType::IndexTypeLen * (size - 1);
-		for (int i = size; i >= pre + 1; i--, tAdd -= IndexType::IndexTypeLen)
-		{
-			writeBlock(tAdd + IndexType::IndexTypeLen, readWholeBlock(tAdd));
-		}
+		copyBlocks(start + IndexType::IndexTypeLen * pre, start + IndexType::IndexTypeLen * (pre + 1), size - pre);
 		writeBlock(tAdd + IndexType::IndexTypeLen, value);
 		size++;
 		dataIO.seekg(start - sizeof(int));
