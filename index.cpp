@@ -69,10 +69,10 @@ IndexDatabase::~IndexDatabase()
 	dataIO.close();
 }
 
-std::string IndexDatabase::readWholeBlock(int address)
+std::string IndexDatabase::readWholeBlock(int address, bool reSeek)
 {
 	char *t = new char[IndexType::IndexTypeLen];
-	dataIO.seekg(address);
+	if (reSeek) dataIO.seekg(address);
 	dataIO.read(t, IndexType::IndexTypeLen);
 	std::string ret = "";
 	for (int i = 0; i < IndexType::IndexTypeLen; i++) ret += t[i];
@@ -81,34 +81,32 @@ std::string IndexDatabase::readWholeBlock(int address)
 }
 
 template<typename T>
-T IndexDatabase::readNum(int address)
+T IndexDatabase::readNum(int address, bool reSeek)
 {
-	char *t = new char[sizeof(T)];
-	dataIO.seekg(address);
-	dataIO.read(t, sizeof(T));
-	T ret = *(reinterpret_cast<T*>(t));
-	delete[] t;
+	T ret;
+	if (reSeek) dataIO.seekg(address);
+	dataIO.read(reinterpret_cast<char*>(&T), sizeof(T));
 	return ret;
 }
 
-int IndexDatabase::readAddress(int address)
+int IndexDatabase::readAddress(int address, bool reSeek)
 {
 	return readNum<int>(address + IndexType::StringLen + IndexType::ISBNLen);
 }
 
-ull IndexDatabase::readISBN(int address)
+ull IndexDatabase::readISBN(int address, bool reSeek)
 {
 	return readNum<ull>(address);
 }
 
-ull IndexDatabase::readKey(int address)
+ull IndexDatabase::readKey(int address, bool reSeek)
 {
 	return readNum<ull>(address);
 }
 
-void IndexDatabase::writeBlock(int address, const std::string &str)
+void IndexDatabase::writeBlock(int address, const std::string &str, bool reSeek)
 {
-	dataIO.seekg(address);
+	if (reSeek) dataIO.seekg(address);
 	dataIO << str;
 }
 
@@ -117,9 +115,9 @@ bool IndexDatabase::inCurBlock(ull key, ull uniqueKey, int curSize)
 	if (curSize == 0) return false;
 	int curAddress = (int)dataIO.tellg();
 	ull strBegin = readKey(curAddress);
-	ull strBegin2 = (uniqueKey != 0) ? readISBN(curAddress + IndexType::StringLen) : 0;
+	ull strBegin2 = (uniqueKey != 0) ? readISBN(curAddress + IndexType::StringLen, false) : 0;
 	ull strEnd = readKey(curAddress + (curSize - 1) * IndexType::IndexTypeLen);
-	ull strEnd2 = (uniqueKey != 0) ? readISBN(curAddress + (curSize - 1) * IndexType::IndexTypeLen + IndexType::StringLen) : 0;
+	ull strEnd2 = (uniqueKey != 0) ? readISBN(curAddress + (curSize - 1) * IndexType::IndexTypeLen + IndexType::StringLen, false) : 0;
 	return (std::make_pair(key, uniqueKey) >= std::make_pair(strBegin, strBegin2))
 		&& (std::make_pair(key, uniqueKey) <= std::make_pair(strEnd, strEnd2));
 }
@@ -130,7 +128,7 @@ std::vector<int> IndexDatabase::readInsideBlock(ull key, int address, int size, 
 	for (int i = 1; i <= size; i++)
 	{
 		ull cur = readKey(address);
-		auto curKey = readISBN(address + IndexType::StringLen);
+		auto curKey = readISBN(address + IndexType::StringLen, false);
 		if ((key == 0 || cur == key) && (uniqueKey == 0 || (curKey == uniqueKey && maindb->read(readAddress(address)).ISBN == uniqueStr))) ret.push_back(readAddress(address));
 		address += IndexType::IndexTypeLen;
 	}
@@ -263,7 +261,7 @@ void IndexDatabase::writeInsideBlock(ull key, int address, int size,
 	for (int i = 1; i <= size; i++)
 	{
 		ull curKey = readKey(address);
-		ull curUniqueKey = readISBN(address + IndexType::StringLen);
+		ull curUniqueKey = readISBN(address + IndexType::StringLen, false);
 		if (curKey == key && curUniqueKey == uniqueKey && maindb->read(readAddress(address)).ISBN == uniqueStr)
 		{
 			dataIO.seekg(address);
@@ -322,7 +320,7 @@ void IndexDatabase::write(const std::string &_key, const std::string &_uniqueKey
 			if (curSize >= 1)
 			{
 				ull strEnd = readKey(curAddress + sizeof(int) + (curSize - 1) * IndexType::IndexTypeLen);
-				ull strEnd2 = readISBN(curAddress + sizeof(int) + (curSize - 1) * IndexType::IndexTypeLen + IndexType::StringLen);
+				ull strEnd2 = readISBN(curAddress + sizeof(int) + (curSize - 1) * IndexType::IndexTypeLen + IndexType::StringLen, false);
 				if (std::make_pair(strEnd, strEnd2) < std::make_pair(key, uniqueKey)) pre = curAddress;
 			}
 			dataIO.seekg(curAddress + BlockLen - sizeof(int));
@@ -358,7 +356,7 @@ void IndexDatabase::eraseInsideBlock(ull key, int address, int size, ull uniqueK
 	for (int i = 1; i <= size; i++)
 	{
 		ull curKey = readKey(address);
-		auto curUniqueKey = readISBN(address + IndexType::StringLen);
+		auto curUniqueKey = readISBN(address + IndexType::StringLen, false);
 		if (curUniqueKey == uniqueKey && curKey == key && maindb->read(readAddress(address)).ISBN == uniqueStr)
 		{
 			int tAdd = address;

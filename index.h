@@ -62,15 +62,15 @@ public:
 	~IndexDatabase();
 
 private:
-	std::string readWholeBlock(int address);
+	std::string readWholeBlock(int address, bool reSeek = true);
 	template<typename T>
-	T readNum(int address);
+	T readNum(int address, bool reSeek = true);
 
-	int readAddress(int address);
-	ull readISBN(int address);
-	ull readKey(int address);
+	int readAddress(int address, bool reSeek = true);
+	ull readISBN(int address, bool reSeek = true);
+	ull readKey(int address, bool reSeek = true);
 
-	void writeBlock(int address, const std::string &str);
+	void writeBlock(int address, const std::string &str, bool reSeek = true);
 
 	bool inCurBlock(ull key, ull uniqueKey, int curSize);
 	std::vector<int> readInsideBlock(ull key, int address, int size, ull uniqueKey = 0, const std::string &uniqueStr = "");
