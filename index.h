@@ -71,6 +71,7 @@ private:
 	ull readKey(int address, bool reSeek = true);
 
 	void writeBlock(int address, const std::string &str, bool reSeek = true);
+	void copyBlocks(int from, int to, int size);
 
 	bool inCurBlock(ull key, ull uniqueKey, int curSize);
 	std::vector<int> readInsideBlock(ull key, int address, int size, ull uniqueKey = 0, const std::string &uniqueStr = "");
