@@ -85,7 +85,7 @@ T IndexDatabase::readNum(int address, bool reSeek)
 {
 	T ret;
 	if (reSeek) dataIO.seekg(address);
-	dataIO.read(reinterpret_cast<char*>(&T), sizeof(T));
+	dataIO.read(reinterpret_cast<char*>(&ret), sizeof(ret));
 	return ret;
 }
 
