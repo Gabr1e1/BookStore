@@ -134,11 +134,13 @@ bool IndexDatabase::inCurBlock(ull key, ull uniqueKey, int curSize)
 std::vector<int> IndexDatabase::readInsideBlock(ull key, int address, int size, ull uniqueKey, const std::string &uniqueStr)
 {
 	std::vector<int> ret;
+	dataIO.seekg(address);
 	for (int i = 1; i <= size; i++)
 	{
-		ull cur = readKey(address, true);
+		ull cur = readKey(address, false);
 		auto curKey = readISBN(address + IndexType::StringLen, false);
-		if ((key == 0 || cur == key) && (uniqueKey == 0 || (curKey == uniqueKey && maindb->read(readAddress(address)).ISBN == uniqueStr))) ret.push_back(readAddress(address));
+		int t = readAddress(address, false);
+		if ((key == 0 || cur == key) && (uniqueKey == 0 || (curKey == uniqueKey && maindb->read(t).ISBN == uniqueStr))) ret.push_back(t);
 		address += IndexType::IndexTypeLen;
 	}
 	return ret;
@@ -261,11 +263,12 @@ void IndexDatabase::writeInsideBlock(ull key, int address, int size,
 		return;
 	}
 
+	dataIO.seekg(address);
 	for (int i = 1; i <= size; i++)
 	{
-		ull curKey = readKey(address);
+		ull curKey = readKey(address, false);
 		ull curUniqueKey = readISBN(address + IndexType::StringLen, false);
-		if (curKey == key && curUniqueKey == uniqueKey && maindb->read(readAddress(address)).ISBN == uniqueStr)
+		if (curKey == key && curUniqueKey == uniqueKey && maindb->read(readAddress(address, false)).ISBN == uniqueStr)
 		{
 			dataIO.seekg(address);
 			dataIO << value;
@@ -274,6 +277,8 @@ void IndexDatabase::writeInsideBlock(ull key, int address, int size,
 		//std::cout << curKey << " " << cur << " " << key << " " << uniqueKey << std::endl;
 		if (std::make_pair(curKey, curUniqueKey) < std::make_pair(key, uniqueKey)) pre = i;
 		else break; //break if the current key > key
+
+		readAddress(address, false);
 		address += IndexType::IndexTypeLen;
 	}
 
