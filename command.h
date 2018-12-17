@@ -13,6 +13,7 @@
 #include "index.h"
 #include "maindb.h"
 #include "finance.h"
+#include "log.h"
 
 enum ResultType { Executed, Exit };
 
@@ -25,9 +26,10 @@ private:
 	std::fstream dataIO;
 	std::vector<DataType> curSelected;
 
-private:
+public:
 	AccountSystem *Account;
 	FinanceSystem *Finance;
+	LogSystem *log;
 	MainDatabase *mainDatabase;
 	IndexDatabase *ISBNDatabase;
 	IndexDatabase *nameDatabase;
