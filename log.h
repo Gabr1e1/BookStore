@@ -11,7 +11,7 @@ class Log
 {
 public:
 	static const int StringLen = 300;
-	static const int LogLen = FinancialEvent::FinancialEventLen + StringLen;
+	static const int LogLen = FinancialEvent::FinancialEventLen + StringLen * 2;
 public:
 	FinancialEvent finance;
 	std::string userId;

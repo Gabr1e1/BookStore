@@ -48,8 +48,9 @@ private:
 	void cleanup();
 
 private:
-	ResultType userCommand(std::vector<std::string> token);
-	ResultType dataCommand(std::vector<std::string> token);
+	ResultType userCommand(std::vector<std::string> &token);
+	ResultType dataCommand(std::vector<std::string> &token);
+	ResultType logCommand(std::vector<std::string> &token);
 	void printSelected(const DataType &req);
 
 public:

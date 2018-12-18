@@ -18,7 +18,7 @@ std::string Log::printToString()
 	t.setf(std::ios::left);
 	t << std::setw(StringLen) << userId;
 	t << std::setw(StringLen) << action;
-	return t.str() + finance.printToString();
+	return finance.printToString() + t.str();
 }
 
 LogSystem::LogSystem(const std::string &file) : dataSystem(file)
@@ -43,11 +43,11 @@ void LogSystem::printFinance()
 	int address = sizeof(size);
 	for (int i = 1; i <= size; i++, address += Log::LogLen)
 	{
-		auto t = Log(read(address, Log::LogLen));
+		auto t = Log(readAll(address, Log::LogLen));
 		if (t.finance.quantity == 0) continue;
-		std::cerr.setf(std::ios::fixed);
-		std::cerr << t.action << " " << (t.finance.isRevenue ? "+" : "-") << " ";
-		std::cerr << std::setprecision(2) << t.finance.price << std::endl;
+		std::cout.setf(std::ios::fixed);
+		std::cout << t.action << " " << (t.finance.isRevenue ? "+" : "-") << " ";
+		std::cout << std::setprecision(2) << t.finance.price << std::endl;
 	}
 }
 
@@ -56,18 +56,18 @@ void LogSystem::printEmployee(const std::string &name)
 	int address = sizeof(size);
 	for (int i = 1; i <= size; i++, address += Log::LogLen)
 	{
-		auto t = Log(read(address, Log::LogLen));
+		auto t = Log(readAll(address, Log::LogLen));
 		if (name == "" || t.userId == name)
 		{
-			std::cerr << t.userId << " " << t.action << std::endl;
+			std::cout << t.userId << " " << t.action << std::endl;
 		}
 	}
 }
 
 void LogSystem::printLog()
 {
-	std::cerr << "Finance: " << std::endl;
+	std::cout << "Finance: " << std::endl;
 	printFinance();
-	std::cerr << "Employee: " << std::endl;
+	std::cout << "Employee: " << std::endl;
 	printEmployee();
 }
