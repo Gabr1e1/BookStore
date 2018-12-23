@@ -87,7 +87,6 @@ void CommandSystem::modify(DataType old, DataType data)
 	}
 	data.keyword = keyword;
 	keywordDatabase->write(data.keyword, data.ISBN, IndexType(data.keyword, data.ISBN, address).printToString());
-
 	cleanup();
 }
 
@@ -170,8 +169,7 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> &token)
 		curSelected.clear();
 		int s = ISBNDatabase->read(token[1], token[1]);
 		curSelected.push_back((s != 0) ? mainDatabase->read(s) : DataType());
-		if (curSelected.size() != 1) throw std::logic_error("Invalid");
-		curSelected[0].ISBN = token[1]; //set default ISBN number, also apply when a book has already been created
+		curSelected[0].ISBN = token[1];
 	}
 	else if (cmd == "modify")
 	{
