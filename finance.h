@@ -20,7 +20,7 @@ public:
 	bool isRevenue;
 
 public:
-	FinancialEvent(int q = 0, double p = 0, bool r = 0);
+	FinancialEvent(int q, double p, bool r);
 	FinancialEvent(const std::string &str);
 
 public:
