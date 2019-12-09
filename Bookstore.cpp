@@ -1,9 +1,10 @@
+#include "finance.h"
+#include "account.h"
+#include "command.h"
+
 #include <iostream>
 #include <string>
 #include <stdexcept>
-
-#include "command.h"
-#include "userinterface.hpp"
 
 int main()
 {
@@ -17,21 +18,15 @@ int main()
 		return 0;
 	}
 
-	std::cerr << "Are you an expert? Enter 1 for yes and 0 for no" << std::endl;
-	bool expert;
-	std::cin >> expert;
-
 	while (true)
 	{
 		try
 		{
 			if (command->Account->curLevel) std::cerr << command->Account->curUserId << "@";
 			else std::cerr << "Guest User@";
-
+			
 			std::string str = "";
-			if (expert) str = UserInterface::read();
-			else str = UserInterface::getInput(command->Account->curLevel == 7);
-
+			getline(std::cin, str);
 			auto t = command->runCommand(str);
 			if (t == Exit) break;
 		}
