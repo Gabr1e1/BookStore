@@ -1,7 +1,6 @@
 #ifndef UserInterface_H
 #define UserInterface_H
 
-#include <map>
 #include "dataSystem.h"
 
 class UserInterface
@@ -26,14 +25,6 @@ private:
 	}
 
 public:
-	static void showManual()
-	{
-		std::map<int, std::string> corres = { {1,"login"},{2,"logout"},{3,"add user"},{4,"register"},{5,"delete"},
-		{6,"change password"}, {7,"select a book"}, {8,"modify"},{9,"import"},{10,"show book"},{11,"show finance"},
-		{12,"buy book"},{13,"report finance status"},{14,"report employee"},{15,"show log"},{16,"report myself"} };
-		for (auto u : corres) std::cerr << "Enter " << u.first << " for " << u.second << std::endl;
-	}
-
 	static std::string getInput(bool root)
 	{
 		std::cerr << "Type of Operation: ";

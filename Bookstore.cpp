@@ -17,11 +17,9 @@ int main()
 		return 0;
 	}
 
-	std::cerr << "Welcome to the Bookstore management system!" << std::endl;
 	std::cerr << "Are you an expert? Enter 1 for yes and 0 for no" << std::endl;
 	bool expert;
 	std::cin >> expert;
-	if (!expert) UserInterface::showManual();
 
 	while (true)
 	{
