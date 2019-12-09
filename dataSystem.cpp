@@ -5,7 +5,6 @@ int stringToInteger(const std::string &str)
 	std::istringstream stream(str);
 	int value;
 	stream >> value;
-	if (stream.fail()) throw std::logic_error("Invalid");
 	return value;
 }
 
@@ -14,7 +13,6 @@ double stringToDouble(const std::string &str)
 	std::istringstream stream(str);
 	double value;
 	stream >> value;
-	if (stream.fail()) throw std::logic_error("Invalid");
 	return value;
 }
 
