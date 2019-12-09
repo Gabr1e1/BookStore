@@ -22,8 +22,8 @@ int main()
 	{
 		try
 		{
-			if (command->Account->curLevel) std::cerr << command->Account->curUserId << "@";
-			else std::cerr << "Guest User@";
+			if (command->Account->curLevel) std::cout << command->Account->curUserId << "@";
+			else std::cout << "Guest User@";
 			
 			std::string str = "";
 			getline(std::cin, str);

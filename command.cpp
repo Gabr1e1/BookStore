@@ -112,10 +112,10 @@ void CommandSystem::printSelected(const DataType &req)
 	}
 }
 
-ResultType CommandSystem::userCommand(std::vector<std::string> &token)
+ResultType CommandSystem::userCommand(std::vector<std::string> token)
 {
 	std::string cmd = token[0];
-	std::string user = (Account->curUserId != "") ? Account->curUserId : "Guest User";
+	std::string user = Account->curUserId;
 
 	if (cmd == "su")
 	{
@@ -159,7 +159,7 @@ ResultType CommandSystem::userCommand(std::vector<std::string> &token)
 	return Executed;
 }
 
-ResultType CommandSystem::dataCommand(std::vector<std::string> &token)
+ResultType CommandSystem::dataCommand(std::vector<std::string> token)
 {
 	std::string cmd = token[0];
 	std::string user = Account->curUserId;
@@ -214,7 +214,7 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> &token)
 		modify(backup, t);
 		auto event = FinancialEvent(stringToInteger(token[1]), stringToDouble(token[2]), false);
 		Finance->addEvent(event);
-		log->addEvent(event, user, "import " + t.ISBN + " " + token[1] + "±¾");
+		log->addEvent(event, user, "import " + t.ISBN + token[1]);
 	}
 	else if (cmd == "show" && token.size() == 1)
 	{
@@ -272,34 +272,7 @@ ResultType CommandSystem::dataCommand(std::vector<std::string> &token)
 		modify(backup, t);
 		auto event = FinancialEvent(quantity, t.price * quantity, true);
 		Finance->addEvent(event);
-		log->addEvent(event, user, "buy " + t.ISBN + " " + token[2] + "±¾");
-	}
-	else throw std::logic_error("Invalid");
-	return Executed;
-}
-
-ResultType CommandSystem::logCommand(std::vector<std::string> &token)
-{
-	std::string cmd = token[0];
-	if (cmd == "log")
-	{
-		if (!(Account->curLevel >= 7)) throw std::logic_error("Invalid");
-		log->printLog();
-	}
-	else if (cmd == "report" && token[1] == "finance")
-	{
-		if (!(Account->curLevel >= 7)) throw std::logic_error("Invalid");
-		log->printFinance();
-	}
-	else if (cmd == "report" && token[1] == "employee")
-	{
-		if (!(Account->curLevel >= 7)) throw std::logic_error("Invalid");
-		log->printEmployee();
-	}
-	else if (cmd == "report" && token[1] == "myself")
-	{
-		if (!(Account->curLevel >= 3)) throw std::logic_error("Invalid");
-		log->printEmployee(Account->curUserId);
+		log->addEvent(event, user, "buy " + t.ISBN + token[1]);
 	}
 	else throw std::logic_error("Invalid");
 	return Executed;
@@ -312,12 +285,14 @@ ResultType CommandSystem::runCommand(const std::string &str)
 
 	if (cmd == "exit") return Exit;
 	if (cmd == "load") return runLoadCommand(token[1]);
-	if (cmd == "su" || cmd == "logout" || cmd == "useradd" || cmd == "register" || cmd == "delete" || cmd == "passwd") 
+	if (cmd == "su" || cmd == "logout" || cmd == "useradd" || cmd == "register" || cmd == "delete" || cmd == "passwd")
+	{
 		return userCommand(token);
+	}
 	if (cmd == "select" || cmd == "modify" || cmd == "import" || cmd == "show" || cmd == "buy")
+	{
 		return dataCommand(token);
-	if (cmd == "report" || cmd == "log")
-		return logCommand(token);
+	}
 	throw std::logic_error("Invalid");
 }
 

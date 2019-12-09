@@ -63,17 +63,6 @@ std::string dataSystem::read(int address, int len)
 	return ret;
 }
 
-std::string dataSystem::readAll(int address, int len)
-{
-	char *t = new char[len];
-	dataIO.seekg(address);
-	dataIO.read(t, len);
-	std::string ret = "";
-	for (int i = 0; i < len; i++) ret += t[i];
-	delete[] t;
-	return ret;
-}
-
 void dataSystem::write(int address, const std::string &str)
 {
 	dataIO.seekg(address);

@@ -25,7 +25,6 @@ protected:
 public:
 	int printToBack(const std::string &str);
 	std::string read(int address, int len);
-	std::string readAll(int address, int len);
 	void write(int address, const std::string &str);
 };
 

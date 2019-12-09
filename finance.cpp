@@ -49,6 +49,7 @@ std::string FinanceSystem::read(int address, int len)
 
 void FinanceSystem::addEvent(int quantity, double price, bool isRevenue)
 {
+	//std::cout << "Add Event: "<<quantity << " " << price << " " << isRevenue << std::endl;
 	printToBack(FinancialEvent(quantity, price, isRevenue).printToString());
 	size++;
 }
